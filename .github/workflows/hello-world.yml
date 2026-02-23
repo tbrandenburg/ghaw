@@ -1,0 +1,43 @@
+name: Hello World Workflow
+
+# Trigger the workflow on push and pull request events
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  hello-world:
+    name: Say Hello
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Step 2: Echo Hello World
+      - name: Say Hello World
+        run: |
+          echo "🌍 Hello World!"
+          echo "This workflow is running locally with act!"
+          echo "Current directory: $(pwd)"
+          echo "Current user: $(whoami)"
+          echo "Date and time: $(date)"
+      
+      # Step 3: Show environment variables (act-specific)
+      - name: Show environment info
+        run: |
+          echo "--- Environment Variables ---"
+          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+          echo "GITHUB_ACTOR: $GITHUB_ACTOR"
+          echo "GITHUB_WORKFLOW: $GITHUB_WORKFLOW"
+          echo "GITHUB_RUN_ID: $GITHUB_RUN_ID"
+          echo "ACT: $ACT"
+          if [ "$ACT" = "true" ]; then
+            echo "🎭 This is running via act (local testing)!"
+          else
+            echo "🚀 This is running on GitHub Actions!"
+          fi
