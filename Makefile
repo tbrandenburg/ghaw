@@ -1,7 +1,7 @@
 # GitHub Actions Workflow (GHAW) - Simplified Makefile
 # Essential commands for managing GitHub Actions workflows locally with act
 
-.PHONY: help setup list run-all run-hello test-opencode validate clean
+.PHONY: help setup list run-all run-hello run-opencode test-opencode test-security test-safety validate clean
 
 # Default target
 help: ## Display available commands
@@ -51,9 +51,13 @@ run-hello: ## Run hello world workflow
 	@echo "🚀 Running hello world..."
 	@act push -W .github/workflows/simple-hello.yml
 
-test-opencode: ## Test OpenCode workflow
-	@echo "🚀 Testing OpenCode integration..."
-	@act workflow_dispatch -W .github/workflows/simple-opencode.yml -P ubuntu-latest=-self-hosted
+run-opencode-simple: ## Run OpenCode workflow
+	@echo "🚀 Running OpenCode workflow..."
+	@act workflow_dispatch -W .github/workflows/simple-opencode.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+run-opencode-enhanced: ## Run enhanced OpenCode workflow with security and safety reviews
+	@echo "🚀 Running enhanced OpenCode workflow..."
+	@act workflow_dispatch -W .github/workflows/enhanced-opencode.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest
 
 # Cleanup
 clean: ## Clean Docker containers and act cache
