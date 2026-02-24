@@ -1,4 +1,4 @@
-name: Simple OpenCode Test
+name: Enhanced OpenCode Test
 
 on:
   push:
