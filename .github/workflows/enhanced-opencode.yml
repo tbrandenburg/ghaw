@@ -5,10 +5,33 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  setup:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 3
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Install OpenCode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
+      - name: Configure OpenCode
+        run: |
+          mkdir -p "$HOME/.config/opencode"
+          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
+
+      - name: Test OpenCode Installation
+        run: |
+          opencode --version
+
+  security-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: setup
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,11 +51,6 @@ jobs:
           SECURITY_PROMPT=$(cat .github/prompts/review-security.prompt.md)
           echo "$SECURITY_PROMPT" | opencode run --model "opencode/big-pickle" > security-review-results.txt
 
-      - name: Run Safety Review
-        run: |
-          SAFETY_PROMPT=$(cat .github/prompts/review-safety.prompt.md)
-          echo "$SAFETY_PROMPT" | opencode run --model "opencode/big-pickle" > safety-review-results.txt
-
       - name: Upload Security Review Results
         uses: actions/upload-artifact@v4
         if: always()
@@ -40,9 +58,81 @@ jobs:
           name: security-review-results
           path: security-review-results.txt
 
+  safety-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: setup
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install OpenCode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
+      - name: Configure OpenCode
+        run: |
+          mkdir -p "$HOME/.config/opencode"
+          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
+
+      - name: Run Safety Review
+        run: |
+          SAFETY_PROMPT=$(cat .github/prompts/review-safety.prompt.md)
+          echo "$SAFETY_PROMPT" | opencode run --model "opencode/big-pickle" > safety-review-results.txt
+
       - name: Upload Safety Review Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: safety-review-results
           path: safety-review-results.txt
+
+  summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [security-review, safety-review]
+    if: always()
+    
+    steps:
+      - name: Download Security Review Results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: security-review-results
+
+      - name: Download Safety Review Results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: safety-review-results
+
+      - name: Create Combined Report
+        run: |
+          echo "# Enhanced OpenCode Review Summary" > combined-report.md
+          echo "" >> combined-report.md
+          echo "## Security Review Results" >> combined-report.md
+          if [ -f security-review-results.txt ]; then
+            echo "\`\`\`" >> combined-report.md
+            head -n 50 security-review-results.txt >> combined-report.md
+            echo "\`\`\`" >> combined-report.md
+          else
+            echo "Security review failed or did not produce results." >> combined-report.md
+          fi
+          echo "" >> combined-report.md
+          echo "## Safety Review Results" >> combined-report.md
+          if [ -f safety-review-results.txt ]; then
+            echo "\`\`\`" >> combined-report.md
+            head -n 50 safety-review-results.txt >> combined-report.md
+            echo "\`\`\`" >> combined-report.md
+          else
+            echo "Safety review failed or did not produce results." >> combined-report.md
+          fi
+
+      - name: Upload Combined Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: combined-review-report
+          path: combined-report.md
