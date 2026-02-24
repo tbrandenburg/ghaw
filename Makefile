@@ -1,7 +1,7 @@
 # GitHub Actions Workflow (GHAW) - Makefile
 # A comprehensive Makefile for managing GitHub Actions workflows locally with act
 
-.PHONY: help install-act check-act list-workflows run-all run-push run-manual run-pr clean-docker validate-workflows setup dev-setup test-opencode run-hello opencode-info opencode-validate opencode-dry-run opencode-setup
+.PHONY: help install-act check-act list-workflows run-all run-push run-manual run-pr clean-docker validate-workflows setup dev-setup test-opencode run-hello opencode-validate opencode-dry-run opencode-setup
 
 # Default target
 help: ## Display this help message
@@ -231,30 +231,6 @@ info: check-act ## Show project and act information
 test-opencode: check-act ## Run simple OpenCode test workflow
 	@echo "🚀 Running simple OpenCode test..."
 	act workflow_dispatch -W .github/workflows/simple-opencode.yml -P ubuntu-latest=-self-hosted
-
-opencode-info: ## Show information about OpenCode workflow integration
-	@echo "🔍 OpenCode Integration Information:"
-	@echo ""
-	@echo "Available commands:"
-	@echo "  make test-opencode        - Run simple OpenCode workflow"
-	@echo "  make run-hello           - Run simple hello world workflow"
-	@echo ""
-	@echo "Files:"
-	@if [ -f ".github/workflows/simple-opencode.yml" ]; then \
-		echo "✅ OpenCode workflow found at .github/workflows/simple-opencode.yml"; \
-	else \
-		echo "❌ OpenCode workflow not found"; \
-	fi
-	@if [ -f ".github/workflows/simple-hello.yml" ]; then \
-		echo "✅ Hello workflow found at .github/workflows/simple-hello.yml"; \
-	else \
-		echo "❌ Hello workflow not found"; \
-	fi
-	@if [ -f ".github/opencode/config.json" ]; then \
-		echo "✅ OpenCode config found at .github/opencode/config.json"; \
-	else \
-		echo "❌ OpenCode config not found"; \
-	fi
 
 # OpenCode Development Commands
 opencode-validate: ## Validate OpenCode workflow syntax
