@@ -1,7 +1,7 @@
 # GitHub Actions Workflow (GHAW) - Makefile
 # A comprehensive Makefile for managing GitHub Actions workflows locally with act
 
-.PHONY: help install-act check-act list-workflows run-all run-push run-manual run-pr clean-docker validate-workflows setup dev-setup
+.PHONY: help install-act check-act list-workflows run-all run-push run-manual run-pr clean-docker validate-workflows setup dev-setup run-opencode-poc run-opencode-full run-opencode-full-manual run-opencode-local test-opencode
 
 # Default target
 help: ## Display this help message
@@ -10,9 +10,14 @@ help: ## Display this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "Quick Start:"
-	@echo "  make setup     - Initial setup (install act if needed)"
-	@echo "  make run-all   - Run all workflows"
-	@echo "  make list      - List available workflows"
+	@echo "  make setup              - Initial setup (install act if needed)"
+	@echo "  make run-all            - Run all workflows"  
+	@echo "  make list               - List available workflows"
+	@echo ""
+	@echo "OpenCode Integration:"
+	@echo "  make run-opencode-poc   - Test OpenCode workflow (standard image)"
+	@echo "  make run-opencode-full  - Test OpenCode workflow (full image, recommended)"
+	@echo "  make opencode-info      - Show OpenCode integration information"
 
 # Installation and Setup
 install-act: ## Install act CLI tool (Linux/macOS)
@@ -222,3 +227,115 @@ info: check-act ## Show project and act information
 	@echo "- Workflows directory: .github/workflows/"
 	@echo "- Available workflow files:"
 	@find .github/workflows -name "*.yml" -o -name "*.yaml" 2>/dev/null | sed 's/^/  - /' || echo "  - None found"
+
+# OpenCode Integration Commands
+run-opencode-poc: check-act ## Run OpenCode PoC workflow with standard act image
+	@echo "🚀 Running OpenCode Proof of Concept workflow..."
+	@echo "ℹ️  Using standard act image (may have architecture limitations)"
+	act workflow_dispatch -W .github/workflows/opencode-poc.yml
+
+run-opencode-full: check-act ## Run OpenCode PoC workflow with full Ubuntu image (recommended)
+	@echo "🚀 Running OpenCode Proof of Concept workflow with full Ubuntu image..."
+	@echo "ℹ️  Using full GitHub runner image (solves architecture issues, ~20GB download)"
+	@echo "⚠️  First run will take time to download the full image"
+	@echo "⏰ Starting with 10-minute timeout..."
+	timeout 600 act workflow_dispatch -W .github/workflows/opencode-poc.yml -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest || \
+	(echo "⚠️  Full image download timed out or failed. Try running manually: make run-opencode-full-manual")
+
+run-opencode-full-manual: check-act ## Run OpenCode PoC with full image (no timeout, manual)
+	@echo "🚀 Running OpenCode with full Ubuntu image (manual, no timeout)..."
+	@echo "💡 This will download ~20GB on first run. Please be patient."
+	act workflow_dispatch -W .github/workflows/opencode-poc.yml -P ubuntu-latest=ghcr.io/catthehacker/ubuntu:full-latest
+
+run-opencode-local: check-act ## Run OpenCode PoC using existing local installation  
+	@echo "🚀 Running OpenCode PoC with existing local OpenCode installation..."
+	@echo "ℹ️  This uses the OpenCode already installed on your system"
+	act workflow_dispatch -W .github/workflows/opencode-poc-local.yml -P ubuntu-latest=-self-hosted
+
+run-opencode-medium: check-act ## Run OpenCode PoC workflow with act-latest image (medium size)
+	@echo "🚀 Running OpenCode Proof of Concept workflow with act-latest image..."
+	@echo "ℹ️  Using act-latest image (good balance of size and compatibility)"
+	act workflow_dispatch -W .github/workflows/opencode-poc.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+test-simple-opencode: check-act ## Run simple OpenCode test workflow
+	@echo "🚀 Running simple OpenCode test..."
+	act workflow_dispatch -W .github/workflows/simple-opencode.yml -P ubuntu-latest=-self-hosted
+
+opencode-info: ## Show information about OpenCode workflow integration
+	@echo "🔍 OpenCode Integration Information:"
+	@echo ""
+	@echo "Available OpenCode commands:"
+	@echo "  make run-opencode-poc         - Run with standard image (may have issues)"
+	@echo "  make run-opencode-medium      - Run with act-latest image (recommended for testing)"
+	@echo "  make run-opencode-full        - Run with full GitHub image (best compatibility, 10min timeout)"
+	@echo "  make run-opencode-full-manual - Run with full GitHub image (no timeout)"
+	@echo "  make run-opencode-local       - Run with existing local OpenCode installation"
+	@echo ""
+	@echo "⚠️  Architecture Issue Detected:"
+	@echo "Current CPU: $$(lscpu | grep 'Model name' | sed 's/Model name: *//')"
+	@echo "The OpenCode binary requires x86_64 instruction set extensions that may not"
+	@echo "be available on lower-power CPUs (Celeron, Atom, etc.)."
+	@echo ""
+	@echo "Solutions:"
+	@echo "  1. Full Image: Use catthehacker/ubuntu:full-latest (may still have issues)"
+	@echo "  2. Real GitHub Actions: Push to GitHub and run there (guaranteed to work)"
+	@echo "  3. Different CPU: Test on a system with newer/more capable CPU"
+	@echo "  4. Wait for OpenCode: Request ARM64 or compatible x86_64 builds from OpenCode team"
+	@echo ""
+	@echo "Image sizes and characteristics:"
+	@echo "  • Standard (node:16-buster-slim): ~150MB, basic Node.js environment"
+	@echo "  • Medium (catthehacker/ubuntu:act-latest): ~1.6GB, most tools included"
+	@echo "  • Full (catthehacker/ubuntu:full-latest): ~20GB compressed, complete GitHub runner"
+	@echo "  • Local: Uses existing system OpenCode installation"
+	@echo ""
+	@if [ -f ".github/workflows/opencode-poc.yml" ]; then \
+		echo "✅ OpenCode PoC workflow found at .github/workflows/opencode-poc.yml"; \
+	else \
+		echo "❌ OpenCode PoC workflow not found"; \
+	fi
+	@if [ -f ".github/workflows/opencode-poc-local.yml" ]; then \
+		echo "✅ OpenCode PoC (Local) workflow found at .github/workflows/opencode-poc-local.yml"; \
+	else \
+		echo "❌ OpenCode PoC (Local) workflow not found"; \
+	fi
+	@if [ -f ".github/opencode/config.json" ]; then \
+		echo "✅ OpenCode config found at .github/opencode/config.json"; \
+	else \
+		echo "❌ OpenCode config not found"; \
+	fi
+	@echo ""
+	@echo "💡 Recommendation: Test the workflows on real GitHub Actions for best results"
+
+# OpenCode Development Commands
+opencode-validate: ## Validate OpenCode workflow syntax
+	@echo "🔍 Validating OpenCode workflow..."
+	@if [ -f ".github/workflows/opencode-poc.yml" ]; then \
+		act --list -W .github/workflows/opencode-poc.yml >/dev/null 2>&1 && \
+		echo "✅ OpenCode workflow syntax is valid" || \
+		echo "❌ OpenCode workflow has syntax errors"; \
+	else \
+		echo "❌ OpenCode workflow file not found"; \
+		exit 1; \
+	fi
+
+opencode-dry-run: check-act ## Show what would be executed in OpenCode workflow (dry run)
+	@echo "🧪 OpenCode workflow dry run..."
+	act workflow_dispatch -W .github/workflows/opencode-poc.yml --dry-run
+
+opencode-setup: ## Setup OpenCode integration files
+	@echo "🔧 Setting up OpenCode integration..."
+	@if [ ! -d ".github/opencode" ]; then \
+		mkdir -p .github/opencode; \
+		echo "✅ Created .github/opencode directory"; \
+	fi
+	@if [ ! -f ".github/opencode/config.json" ]; then \
+		echo "⚠️  OpenCode config.json not found. Please create it manually."; \
+		echo "    Example config available in the repository."; \
+	else \
+		echo "✅ OpenCode config.json exists"; \
+	fi
+	@if [ ! -f ".github/workflows/opencode-poc.yml" ]; then \
+		echo "⚠️  OpenCode PoC workflow not found. Please create it manually."; \
+	else \
+		echo "✅ OpenCode PoC workflow exists"; \
+	fi

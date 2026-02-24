@@ -1,0 +1,17 @@
+name: Simple Hello
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  simple-hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Just Hello World
+        run: |
+          echo "================================"
+          echo "🎉 HELLO WORLD FROM GITHUB ACTIONS!"
+          echo "================================"
+          echo "Running via act: ${{ env.ACT }}"
+          echo "================================"

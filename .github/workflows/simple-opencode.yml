@@ -1,0 +1,27 @@
+name: Simple OpenCode Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install OpenCode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
+      - name: Configure OpenCode
+        run: |
+          mkdir -p "$HOME/.config/opencode"
+          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
+
+      - name: Test OpenCode
+        run: |
+          opencode --model "opencode/big-pickle" run 'Say: ✅ SUCCESS!'

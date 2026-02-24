@@ -1,0 +1,19 @@
+name: Ultra Simple OpenCode Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Install OpenCode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
+      - name: Test OpenCode
+        run: |
+          opencode run 'Say: ✅ SUCCESS!'
