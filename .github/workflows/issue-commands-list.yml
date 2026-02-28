@@ -1,0 +1,58 @@
+name: List Available Commands on New Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  list-commands:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: List available commands
+        id: list-commands
+        run: |
+          # Get the list of command files from .opencode/commands directory
+          commands=$(find .opencode/commands -name "*.md" -type f -exec basename {} .md \; | sort)
+          
+          # Format commands with slash prefix
+          formatted_commands=""
+          for cmd in $commands; do
+            formatted_commands="${formatted_commands}/${cmd}\n"
+          done
+          
+          # Remove the trailing newline
+          formatted_commands=$(echo -e "$formatted_commands" | sed '$ s/\n$//')
+          
+          # Set the output for use in the next step
+          echo "commands<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$formatted_commands" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Comment on issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const author = context.payload.issue.user.login;
+            const commands = `${{ steps.list-commands.outputs.commands }}`;
+            
+            const commentBody = `Hello ${author}!
+
+            Thanks for your feedback!
+
+            Here are my commands I am offering:
+
+            ${commands}`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
