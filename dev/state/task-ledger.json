@@ -60,5 +60,14 @@
       "SOLUTION: Use simple string literals instead of complex context expressions"
     ],
     "last_verified": "2026-02-28T13:08:00Z"
+  },
+  "TASK_ADD_SCHEDULE": {
+    "status": "done",
+    "evidence": [
+      "edit: Added schedule trigger to comprehensive-review.yml",
+      "Schedule: Daily at 2:00 AM UTC using cron '0 2 * * *'",
+      "Keeps existing push and workflow_dispatch triggers"
+    ],
+    "last_verified": "2026-02-28T13:20:00Z"
   }
 }

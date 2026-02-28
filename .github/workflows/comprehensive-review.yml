@@ -3,6 +3,9 @@ name: Comprehensive Review Test
 on:
   push:
   workflow_dispatch:
+  schedule:
+    # Run daily at 2:00 AM UTC (nighttime for most timezones)
+    - cron: '0 2 * * *'
 
 env:
   CACHE_KEY_PREFIX: opencode
