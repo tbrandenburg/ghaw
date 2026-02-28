@@ -25,6 +25,7 @@ jobs:
 
       - name: Test OpenCode Installation
         run: |
+          export PATH="$HOME/.opencode/bin:$PATH"
           opencode --version
 
   security-review:

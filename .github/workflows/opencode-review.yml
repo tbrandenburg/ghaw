@@ -55,7 +55,9 @@ jobs:
       - name: Install OpenCode
         if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
         run: |
+          echo "Installing OpenCode..."
           curl -fsSL https://opencode.ai/install | bash
+          echo "OpenCode installation completed"
 
       - name: Configure OpenCode
         if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
@@ -67,10 +69,13 @@ jobs:
         run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
       - name: Test OpenCode Installation
-        run: opencode --version
+        run: |
+          export PATH="$HOME/.opencode/bin:$PATH"
+          opencode --version
 
       - name: Run ${{ inputs.review-name }} Review
         run: |
+          export PATH="$HOME/.opencode/bin:$PATH"
           PROMPT=$(cat ${{ inputs.prompt-file }})
           echo "$PROMPT" | opencode run --model "${{ inputs.opencode-model }}" > ${{ inputs.review-name }}-review-results.txt
 
