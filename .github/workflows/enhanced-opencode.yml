@@ -48,7 +48,7 @@ jobs:
 
       - name: Run Security Review
         run: |
-          SECURITY_PROMPT=$(cat .github/prompts/review-security.prompt.md)
+          SECURITY_PROMPT=$(cat .github/prompts/security.prompt.md)
           echo "$SECURITY_PROMPT" | opencode run --model "opencode/big-pickle" > security-review-results.txt
 
       - name: Upload Security Review Results
@@ -79,7 +79,7 @@ jobs:
 
       - name: Run Safety Review
         run: |
-          SAFETY_PROMPT=$(cat .github/prompts/review-safety.prompt.md)
+          SAFETY_PROMPT=$(cat .github/prompts/safety.prompt.md)
           echo "$SAFETY_PROMPT" | opencode run --model "opencode/big-pickle" > safety-review-results.txt
 
       - name: Upload Safety Review Results
