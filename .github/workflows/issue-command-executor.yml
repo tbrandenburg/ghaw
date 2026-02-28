@@ -5,14 +5,19 @@ on:
     types: [created]
 
 jobs:
-  check-and-execute:
+  parse-and-check:
     # Only run if the comment author is the repository owner
     if: github.event.comment.author_association == 'OWNER'
     runs-on: ubuntu-latest
     permissions:
       issues: write
       contents: read
-      actions: write
+    outputs:
+      has-command: ${{ steps.parse-comment.outputs.has_command }}
+      command: ${{ steps.parse-comment.outputs.command }}
+      prompt: ${{ steps.parse-comment.outputs.prompt }}
+      agent: ${{ steps.parse-comment.outputs.agent }}
+      is-agent-command: ${{ steps.parse-comment.outputs.is_agent_command }}
     
     steps:
       - name: Checkout repository
@@ -61,31 +66,38 @@ jobs:
             echo "No command detected in comment"
             echo "has_command=false" >> $GITHUB_OUTPUT
           fi
-      
-      - name: Execute OpenCode command
-        if: steps.parse-comment.outputs.has_command == 'true'
-        id: execute-opencode
-        uses: ./.github/workflows/opencode-run.yml
-        with:
-          run-name: "issue-${{ github.event.issue.number }}-comment-${{ github.event.comment.id }}"
-          command: ${{ steps.parse-comment.outputs.command }}
-          prompt: ${{ steps.parse-comment.outputs.prompt }}
-          agent: ${{ steps.parse-comment.outputs.is_agent_command == 'true' && steps.parse-comment.outputs.agent || 'build' }}
-          timeout-minutes: 30
-      
+
+  execute-opencode:
+    if: needs.parse-and-check.outputs.has-command == 'true'
+    needs: parse-and-check
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: "issue-${{ github.event.issue.number }}-comment-${{ github.event.comment.id }}"
+      command: ${{ needs.parse-and-check.outputs.command }}
+      prompt: ${{ needs.parse-and-check.outputs.prompt }}
+      agent: ${{ needs.parse-and-check.outputs.is-agent-command == 'true' && needs.parse-and-check.outputs.agent || 'build' }}
+      timeout-minutes: 30
+
+  comment-results:
+    if: needs.parse-and-check.outputs.has-command == 'true' && always()
+    needs: [parse-and-check, execute-opencode]
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    
+    steps:      
       - name: Comment execution results
-        if: steps.parse-comment.outputs.has_command == 'true' && always()
         uses: actions/github-script@v7
         with:
           script: |
-            const command = '${{ steps.parse-comment.outputs.command }}';
-            const isAgentCommand = '${{ steps.parse-comment.outputs.is_agent_command }}' === 'true';
-            const agent = '${{ steps.parse-comment.outputs.agent }}';
+            const command = '${{ needs.parse-and-check.outputs.command }}';
+            const isAgentCommand = '${{ needs.parse-and-check.outputs.is-agent-command }}' === 'true';
+            const agent = '${{ needs.parse-and-check.outputs.agent }}';
             const runId = context.runId;
             
-            const results = `${{ steps.execute-opencode.outputs.results }}`;
-            const resultsTruncated = '${{ steps.execute-opencode.outputs.results-truncated }}' === 'true';
-            const artifactName = '${{ steps.execute-opencode.outputs.artifact-name }}';
+            const results = `${{ needs.execute-opencode.outputs.results }}`;
+            const resultsTruncated = '${{ needs.execute-opencode.outputs.results-truncated }}' === 'true';
+            const artifactName = '${{ needs.execute-opencode.outputs.artifact-name }}';
             
             let executionType;
             if (isAgentCommand) {
