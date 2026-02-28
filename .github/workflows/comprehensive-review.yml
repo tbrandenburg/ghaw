@@ -20,8 +20,8 @@ jobs:
       prompt-file: .github/prompts/security.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   compliance-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -31,8 +31,8 @@ jobs:
       prompt-file: .github/prompts/compliance.prompt.md
       timeout-minutes: 18
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   safety-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -42,8 +42,8 @@ jobs:
       prompt-file: .github/prompts/safety.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   # ==========================================
   # 📖 CODE QUALITY STREAM
@@ -56,8 +56,8 @@ jobs:
       prompt-file: .github/prompts/readability.prompt.md
       timeout-minutes: 8
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   efficiency-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -67,8 +67,8 @@ jobs:
       prompt-file: .github/prompts/efficiency.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   performance-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -78,8 +78,8 @@ jobs:
       prompt-file: .github/prompts/performance.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   # ==========================================
   # 🏗️ ARCHITECTURE STREAM
@@ -92,8 +92,8 @@ jobs:
       prompt-file: .github/prompts/architecture.prompt.md
       timeout-minutes: 20
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   scalability-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -103,8 +103,8 @@ jobs:
       prompt-file: .github/prompts/scalability.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   modularity-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -114,8 +114,8 @@ jobs:
       prompt-file: .github/prompts/modularity.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   # ==========================================
   # 👤 USER EXPERIENCE STREAM
@@ -128,8 +128,8 @@ jobs:
       prompt-file: .github/prompts/usability.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   accessibility-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -139,8 +139,8 @@ jobs:
       prompt-file: .github/prompts/accessibility.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   documentation-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -150,8 +150,8 @@ jobs:
       prompt-file: .github/prompts/documentation.prompt.md
       timeout-minutes: 8
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   # ==========================================
   # 🔀 CROSS-STREAM CONVERGENCE
@@ -165,8 +165,8 @@ jobs:
       prompt-file: .github/prompts/reliability.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   testability-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -176,8 +176,8 @@ jobs:
       prompt-file: .github/prompts/testability.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   maintainability-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -187,8 +187,8 @@ jobs:
       prompt-file: .github/prompts/maintainability.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   compatibility-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -198,8 +198,8 @@ jobs:
       prompt-file: .github/prompts/compatibility.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
-      opencode-model: ${{ env.OPENCODE_MODEL }}
+      cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+      opencode-model: opencode/big-pickle
 
   # ==========================================
   # 🎯 FINAL COMPREHENSIVE SUMMARY
