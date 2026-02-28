@@ -13,7 +13,6 @@ timeouts:
 opencode:
   model: "opencode/big-pickle"
   install_url: "https://opencode.ai/install"
-  config_path: ".github/opencode/config.json"
   
 # Runner configuration
 runners:
