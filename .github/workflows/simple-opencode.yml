@@ -8,8 +8,7 @@ jobs:
   test:
     uses: ./.github/workflows/opencode-run.yml
     with:
-      review-name: simple-test
+      run-name: simple-test
       prompt-file: .opencode/commands/simple-test.md
       timeout-minutes: 5
-      use-cache: false
-      opencode-model: "opencode/big-pickle"
+      model: "opencode/big-pickle"

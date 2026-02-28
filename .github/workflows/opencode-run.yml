@@ -1,14 +1,14 @@
-name: OpenCode Review (Reusable)
+name: OpenCode Run (Reusable)
 
 on:
   workflow_call:
     inputs:
-      review-name:
-        description: 'Name of the review (e.g., security, safety, performance)'
+      run-name:
+        description: 'Name of the run (e.g., security, safety, performance)'
         required: true
         type: string
       prompt:
-        description: 'The prompt content to use for the review (mutually exclusive with prompt-file)'
+        description: 'The prompt content to use for the run (mutually exclusive with prompt-file)'
         required: false
         type: string
       prompt-file:
@@ -16,21 +16,12 @@ on:
         required: false
         type: string
       timeout-minutes:
-        description: 'Timeout for the review job in minutes'
+        description: 'Timeout for the run job in minutes'
         required: false
         type: number
-        default: 10
-      use-cache:
-        description: 'Whether to use OpenCode caching (true) or fresh install (false)'
-        required: false
-        type: boolean
-        default: false
-      cache-key:
-        description: 'Cache key for OpenCode installation (only used when use-cache is true)'
-        required: false
-        type: string
-      opencode-model:
-        description: 'OpenCode model to use for the review'
+        default: 120
+      model:
+        description: 'OpenCode model to use for the run'
         required: false
         type: string
         default: 'opencode/big-pickle'
@@ -39,6 +30,10 @@ on:
         required: false
         type: string
         default: 'build'
+      command:
+        description: 'Command to use for OpenCode run (alternative to prompt/prompt-file)'
+        required: false
+        type: string
       runner:
         description: 'Runner to use for the job'
         required: false
@@ -50,7 +45,7 @@ env:
   MAX_OUTPUT_LINES: 50
 
 jobs:
-  review:
+  run:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     
@@ -58,47 +53,47 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Conditional: Use cache if specified
-      - name: Restore OpenCode from cache
-        if: ${{ inputs.use-cache }}
-        id: cache-restore
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ inputs.cache-key }}
-
-      # Conditional: Fresh install if not using cache OR cache miss
-      - name: Install OpenCode
-        if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
+      - name: Setup and Install OpenCode
         run: |
-          echo "Installing OpenCode..."
-          curl -fsSL ${{ env.OPENCODE_INSTALL_URL }} | bash
-          echo "OpenCode installation completed"
+          # Add OpenCode to PATH first
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+          
+          # Check if OpenCode is already installed and working
+          if command -v opencode >/dev/null 2>&1 && opencode --version >/dev/null 2>&1; then
+            echo "OpenCode is already installed and working"
+            opencode --version
+          else
+            echo "OpenCode not found or not working, installing..."
+            curl -fsSL ${{ env.OPENCODE_INSTALL_URL }} | bash
+            echo "OpenCode installation completed"
+            # Verify installation
+            env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode --version
+          fi
 
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-
-      - name: Test OpenCode Installation
+      - name: Run OpenCode ${{ inputs.run-name }}
         run: |
-          env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode --version
-
-      - name: Run ${{ inputs.review-name }} Review
-        run: |
-          if [ -n "${{ inputs.prompt }}" ]; then
-            echo "${{ inputs.prompt }}" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --model "${{ inputs.opencode-model }}" --agent "${{ inputs.agent }}" > ${{ inputs.review-name }}-review-results.txt
+          if [ -n "${{ inputs.command }}" ]; then
+            if [ -n "${{ inputs.prompt }}" ]; then
+              echo "${{ inputs.prompt }}" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+            elif [ -n "${{ inputs.prompt-file }}" ]; then
+              PROMPT=$(cat ${{ inputs.prompt-file }})
+              echo "$PROMPT" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+            else
+              env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+            fi
+          elif [ -n "${{ inputs.prompt }}" ]; then
+            echo "${{ inputs.prompt }}" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
           elif [ -n "${{ inputs.prompt-file }}" ]; then
             PROMPT=$(cat ${{ inputs.prompt-file }})
-            echo "$PROMPT" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --model "${{ inputs.opencode-model }}" --agent "${{ inputs.agent }}" > ${{ inputs.review-name }}-review-results.txt
+            echo "$PROMPT" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
           else
-            echo "Error: Either 'prompt' or 'prompt-file' input must be provided" >&2
+            echo "Error: At least one of 'command', 'prompt', or 'prompt-file' must be provided" >&2
             exit 1
           fi
 
-      - name: Upload ${{ inputs.review-name }} Review Results
+      - name: Upload ${{ inputs.run-name }} Results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ${{ inputs.review-name }}-review-results
-          path: ${{ inputs.review-name }}-review-results.txt
+          name: ${{ inputs.run-name }}-results
+          path: ${{ inputs.run-name }}-results.txt

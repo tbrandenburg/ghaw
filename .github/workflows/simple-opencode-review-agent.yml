@@ -8,9 +8,8 @@ jobs:
   review:
     uses: ./.github/workflows/opencode-run.yml
     with:
-      review-name: repository-review
+      run-name: repository-review
       prompt: "Review this entire repository"
       timeout-minutes: 10
-      use-cache: false
-      opencode-model: "opencode/big-pickle"
+      model: "opencode/big-pickle"
       agent: "review"
