@@ -20,7 +20,8 @@ jobs:
       prompt-file: .github/prompts/security.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   compliance-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -30,7 +31,8 @@ jobs:
       prompt-file: .github/prompts/compliance.prompt.md
       timeout-minutes: 18
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   safety-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -40,7 +42,8 @@ jobs:
       prompt-file: .github/prompts/safety.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   # ==========================================
   # 📖 CODE QUALITY STREAM
@@ -53,7 +56,8 @@ jobs:
       prompt-file: .github/prompts/readability.prompt.md
       timeout-minutes: 8
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   efficiency-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -63,7 +67,8 @@ jobs:
       prompt-file: .github/prompts/efficiency.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   performance-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -73,7 +78,8 @@ jobs:
       prompt-file: .github/prompts/performance.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   # ==========================================
   # 🏗️ ARCHITECTURE STREAM
@@ -86,7 +92,8 @@ jobs:
       prompt-file: .github/prompts/architecture.prompt.md
       timeout-minutes: 20
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   scalability-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -96,7 +103,8 @@ jobs:
       prompt-file: .github/prompts/scalability.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   modularity-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -106,7 +114,8 @@ jobs:
       prompt-file: .github/prompts/modularity.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   # ==========================================
   # 👤 USER EXPERIENCE STREAM
@@ -119,7 +128,8 @@ jobs:
       prompt-file: .github/prompts/usability.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   accessibility-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -129,7 +139,8 @@ jobs:
       prompt-file: .github/prompts/accessibility.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   documentation-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -139,7 +150,8 @@ jobs:
       prompt-file: .github/prompts/documentation.prompt.md
       timeout-minutes: 8
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   # ==========================================
   # 🔀 CROSS-STREAM CONVERGENCE
@@ -153,7 +165,8 @@ jobs:
       prompt-file: .github/prompts/reliability.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   testability-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -163,7 +176,8 @@ jobs:
       prompt-file: .github/prompts/testability.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   maintainability-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -173,7 +187,8 @@ jobs:
       prompt-file: .github/prompts/maintainability.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   compatibility-review:
     uses: ./.github/workflows/opencode-review.yml
@@ -183,7 +198,8 @@ jobs:
       prompt-file: .github/prompts/compatibility.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
+      cache-key: ${{ format('opencode-{0}-{1}', runner.os, github.run_id) }}
+      opencode-model: ${{ env.OPENCODE_MODEL }}
 
   # ==========================================
   # 🎯 FINAL COMPREHENSIVE SUMMARY
