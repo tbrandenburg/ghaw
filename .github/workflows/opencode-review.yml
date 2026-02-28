@@ -43,22 +43,22 @@ jobs:
       # Conditional: Use cache if specified
       - name: Restore OpenCode from cache
         if: ${{ inputs.use-cache }}
+        id: cache-restore
         uses: actions/cache@v4
         with:
           path: |
             ~/.opencode
             ~/.config/opencode
           key: ${{ inputs.cache-key }}
-          fail-on-cache-miss: true
 
-      # Conditional: Fresh install if not using cache
+      # Conditional: Fresh install if not using cache OR cache miss
       - name: Install OpenCode
-        if: ${{ !inputs.use-cache }}
+        if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
         run: |
           curl -fsSL https://opencode.ai/install | bash
 
       - name: Configure OpenCode
-        if: ${{ !inputs.use-cache }}
+        if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
         run: |
           mkdir -p "$HOME/.config/opencode"
           cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
