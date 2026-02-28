@@ -1,0 +1,16 @@
+name: Simple OpenCode Review Agent
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  review:
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      review-name: repository-review
+      prompt: "Review this entire repository"
+      timeout-minutes: 10
+      use-cache: false
+      opencode-model: "opencode/big-pickle"
+      agent: "review"

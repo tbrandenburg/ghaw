@@ -6,7 +6,7 @@ on:
 
 jobs:
   security-review:
-    uses: ./.github/workflows/opencode-review.yml
+    uses: ./.github/workflows/opencode-run.yml
     with:
       review-name: security
       prompt-file: .opencode/commands/security-review.md
@@ -14,7 +14,7 @@ jobs:
       use-cache: false
 
   safety-review:
-    uses: ./.github/workflows/opencode-review.yml
+    uses: ./.github/workflows/opencode-run.yml
     with:
       review-name: safety
       prompt-file: .opencode/commands/safety-review.md

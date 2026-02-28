@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    uses: ./.github/workflows/opencode-review.yml
+    uses: ./.github/workflows/opencode-run.yml
     with:
       review-name: simple-test
       prompt-file: .opencode/commands/simple-test.md
