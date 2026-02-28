@@ -20,7 +20,7 @@ jobs:
     uses: ./.github/workflows/opencode-review.yml
     with:
       review-name: security
-      prompt-file: .github/prompts/security.prompt.md
+      prompt-file: .opencode/commands/security-review.md
       timeout-minutes: 10
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -31,7 +31,7 @@ jobs:
     needs: [security-review]
     with:
       review-name: compliance
-      prompt-file: .github/prompts/compliance.prompt.md
+      prompt-file: .opencode/commands/compliance-review.md
       timeout-minutes: 18
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -42,7 +42,7 @@ jobs:
     needs: [compliance-review]
     with:
       review-name: safety
-      prompt-file: .github/prompts/safety.prompt.md
+      prompt-file: .opencode/commands/safety-review.md
       timeout-minutes: 10
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -56,7 +56,7 @@ jobs:
     uses: ./.github/workflows/opencode-review.yml
     with:
       review-name: readability
-      prompt-file: .github/prompts/readability.prompt.md
+      prompt-file: .opencode/commands/readability-review.md
       timeout-minutes: 8
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -67,7 +67,7 @@ jobs:
     needs: [readability-review]
     with:
       review-name: efficiency
-      prompt-file: .github/prompts/efficiency.prompt.md
+      prompt-file: .opencode/commands/efficiency-review.md
       timeout-minutes: 10
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -78,7 +78,7 @@ jobs:
     needs: [efficiency-review]
     with:
       review-name: performance
-      prompt-file: .github/prompts/performance.prompt.md
+      prompt-file: .opencode/commands/performance-review.md
       timeout-minutes: 15
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -92,7 +92,7 @@ jobs:
     uses: ./.github/workflows/opencode-review.yml
     with:
       review-name: architecture
-      prompt-file: .github/prompts/architecture.prompt.md
+      prompt-file: .opencode/commands/architecture-review.md
       timeout-minutes: 20
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -103,7 +103,7 @@ jobs:
     needs: [architecture-review]
     with:
       review-name: scalability
-      prompt-file: .github/prompts/scalability.prompt.md
+      prompt-file: .opencode/commands/scalability-review.md
       timeout-minutes: 15
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -114,7 +114,7 @@ jobs:
     needs: [scalability-review]
     with:
       review-name: modularity
-      prompt-file: .github/prompts/modularity.prompt.md
+      prompt-file: .opencode/commands/modularity-review.md
       timeout-minutes: 10
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -128,7 +128,7 @@ jobs:
     uses: ./.github/workflows/opencode-review.yml
     with:
       review-name: usability
-      prompt-file: .github/prompts/usability.prompt.md
+      prompt-file: .opencode/commands/usability-review.md
       timeout-minutes: 10
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -139,7 +139,7 @@ jobs:
     needs: [usability-review]
     with:
       review-name: accessibility
-      prompt-file: .github/prompts/accessibility.prompt.md
+      prompt-file: .opencode/commands/accessibility-review.md
       timeout-minutes: 12
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -150,7 +150,7 @@ jobs:
     needs: [accessibility-review]
     with:
       review-name: documentation
-      prompt-file: .github/prompts/documentation.prompt.md
+      prompt-file: .opencode/commands/documentation-review.md
       timeout-minutes: 8
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -165,7 +165,7 @@ jobs:
     needs: [performance-review, modularity-review]
     with:
       review-name: reliability
-      prompt-file: .github/prompts/reliability.prompt.md
+      prompt-file: .opencode/commands/reliability-review.md
       timeout-minutes: 15
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -176,7 +176,7 @@ jobs:
     needs: [modularity-review, safety-review]
     with:
       review-name: testability
-      prompt-file: .github/prompts/testability.prompt.md
+      prompt-file: .opencode/commands/testability-review.md
       timeout-minutes: 12
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -187,7 +187,7 @@ jobs:
     needs: [documentation-review, performance-review, safety-review]
     with:
       review-name: maintainability
-      prompt-file: .github/prompts/maintainability.prompt.md
+      prompt-file: .opencode/commands/maintainability-review.md
       timeout-minutes: 12
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}
@@ -198,7 +198,7 @@ jobs:
     needs: [reliability-review, testability-review]
     with:
       review-name: compatibility
-      prompt-file: .github/prompts/compatibility.prompt.md
+      prompt-file: .opencode/commands/compatibility-review.md
       timeout-minutes: 12
       use-cache: true
       cache-key: opencode-ubuntu-latest-${{ github.run_id }}

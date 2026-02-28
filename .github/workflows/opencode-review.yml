@@ -7,9 +7,13 @@ on:
         description: 'Name of the review (e.g., security, safety, performance)'
         required: true
         type: string
+      prompt:
+        description: 'The prompt content to use for the review (mutually exclusive with prompt-file)'
+        required: false
+        type: string
       prompt-file:
-        description: 'Path to the prompt file (e.g., .github/prompts/security.prompt.md)'
-        required: true
+        description: 'Path to the prompt file (e.g., .github/prompts/security.prompt.md) (mutually exclusive with prompt)'
+        required: false
         type: string
       timeout-minutes:
         description: 'Timeout for the review job in minutes'
@@ -30,6 +34,11 @@ on:
         required: false
         type: string
         default: 'opencode/big-pickle'
+      agent:
+        description: 'Agent to use for OpenCode run'
+        required: false
+        type: string
+        default: 'build'
       runner:
         description: 'Runner to use for the job'
         required: false
@@ -38,7 +47,6 @@ on:
 
 env:
   OPENCODE_INSTALL_URL: 'https://opencode.ai/install'
-  OPENCODE_CONFIG_PATH: '.github/opencode/config.json'
   MAX_OUTPUT_LINES: 50
 
 jobs:
@@ -69,12 +77,6 @@ jobs:
           curl -fsSL ${{ env.OPENCODE_INSTALL_URL }} | bash
           echo "OpenCode installation completed"
 
-      - name: Configure OpenCode
-        if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
-        run: |
-          mkdir -p "$HOME/.config/opencode"
-          cp ${{ env.OPENCODE_CONFIG_PATH }} "$HOME/.config/opencode/config.json"
-
       - name: Setup OpenCode PATH
         run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
 
@@ -86,8 +88,15 @@ jobs:
       - name: Run ${{ inputs.review-name }} Review
         run: |
           export PATH="$HOME/.opencode/bin:$PATH"
-          PROMPT=$(cat ${{ inputs.prompt-file }})
-          echo "$PROMPT" | opencode run --model "${{ inputs.opencode-model }}" > ${{ inputs.review-name }}-review-results.txt
+          if [ -n "${{ inputs.prompt }}" ]; then
+            echo "${{ inputs.prompt }}" | opencode run --model "${{ inputs.opencode-model }}" --agent "${{ inputs.agent }}" > ${{ inputs.review-name }}-review-results.txt
+          elif [ -n "${{ inputs.prompt-file }}" ]; then
+            PROMPT=$(cat ${{ inputs.prompt-file }})
+            echo "$PROMPT" | opencode run --model "${{ inputs.opencode-model }}" --agent "${{ inputs.agent }}" > ${{ inputs.review-name }}-review-results.txt
+          else
+            echo "Error: Either 'prompt' or 'prompt-file' input must be provided" >&2
+            exit 1
+          fi
 
       - name: Upload ${{ inputs.review-name }} Review Results
         uses: actions/upload-artifact@v4

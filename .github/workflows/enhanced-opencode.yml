@@ -9,7 +9,7 @@ jobs:
     uses: ./.github/workflows/opencode-review.yml
     with:
       review-name: security
-      prompt-file: .github/prompts/security.prompt.md
+      prompt-file: .opencode/commands/security-review.md
       timeout-minutes: 10
       use-cache: false
 
@@ -17,7 +17,7 @@ jobs:
     uses: ./.github/workflows/opencode-review.yml
     with:
       review-name: safety
-      prompt-file: .github/prompts/safety.prompt.md
+      prompt-file: .opencode/commands/safety-review.md
       timeout-minutes: 10
       use-cache: false
 

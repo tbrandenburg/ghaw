@@ -9,7 +9,7 @@ jobs:
     uses: ./.github/workflows/opencode-review.yml
     with:
       review-name: simple-test
-      prompt-file: .github/prompts/simple-test.prompt.md
+      prompt-file: .opencode/commands/simple-test.md
       timeout-minutes: 5
       use-cache: false
       opencode-model: "opencode/big-pickle"
