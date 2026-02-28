@@ -1,7 +1,6 @@
 name: Comprehensive Review Test
 
 on:
-  push:
   workflow_dispatch:
   schedule:
     # Run daily at 2:00 AM UTC (nighttime for most timezones)
