@@ -5,32 +5,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install OpenCode
-        run: |
-          curl -fsSL https://opencode.ai/install | bash
-          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-
-      - name: Configure OpenCode
-        run: |
-          mkdir -p "$HOME/.config/opencode"
-          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
-
-      - name: Test OpenCode Installation
-        run: |
-          export PATH="$HOME/.opencode/bin:$PATH"
-          opencode --version
-
   security-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: setup
     with:
       review-name: security
       prompt-file: .github/prompts/security.prompt.md
@@ -39,7 +15,6 @@ jobs:
 
   safety-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: setup
     with:
       review-name: safety
       prompt-file: .github/prompts/safety.prompt.md
@@ -53,6 +28,9 @@ jobs:
     if: always()
     
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download Security Review Results
         uses: actions/download-artifact@v4
         continue-on-error: true
@@ -66,26 +44,10 @@ jobs:
           name: safety-review-results
 
       - name: Create Combined Report
+        env:
+          REPORT_TITLE: "Enhanced OpenCode Review Summary"
         run: |
-          echo "# Enhanced OpenCode Review Summary" > combined-report.md
-          echo "" >> combined-report.md
-          echo "## Security Review Results" >> combined-report.md
-          if [ -f security-review-results.txt ]; then
-            echo "\`\`\`" >> combined-report.md
-            head -n 50 security-review-results.txt >> combined-report.md
-            echo "\`\`\`" >> combined-report.md
-          else
-            echo "Security review failed or did not produce results." >> combined-report.md
-          fi
-          echo "" >> combined-report.md
-          echo "## Safety Review Results" >> combined-report.md
-          if [ -f safety-review-results.txt ]; then
-            echo "\`\`\`" >> combined-report.md
-            head -n 50 safety-review-results.txt >> combined-report.md
-            echo "\`\`\`" >> combined-report.md
-          else
-            echo "Safety review failed or did not produce results." >> combined-report.md
-          fi
+          .github/scripts/generate-report.sh basic security safety
 
       - name: Upload Combined Report
         uses: actions/upload-artifact@v4

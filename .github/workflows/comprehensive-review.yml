@@ -4,83 +4,43 @@ on:
   push:
   workflow_dispatch:
 
+env:
+  CACHE_KEY_PREFIX: opencode
+  OPENCODE_MODEL: opencode/big-pickle
+
 jobs:
-  setup:
-    runs-on: ubuntu-latest
-    timeout-minutes: 3
-    outputs:
-      opencode-cache-key: ${{ steps.cache-key.outputs.key }}
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Generate cache key
-        id: cache-key
-        run: |
-          echo "key=opencode-$(runner.os)-$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-
-      - name: Cache OpenCode installation
-        id: cache-opencode
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ steps.cache-key.outputs.key }}
-
-      - name: Install OpenCode
-        if: steps.cache-opencode.outputs.cache-hit != 'true'
-        run: |
-          echo "Installing OpenCode..."
-          curl -fsSL https://opencode.ai/install | bash
-          echo "OpenCode installation completed"
-
-      - name: Configure OpenCode
-        if: steps.cache-opencode.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p "$HOME/.config/opencode"
-          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
-
-      - name: Test OpenCode Installation
-        run: |
-          export PATH="$HOME/.opencode/bin:$PATH"
-          opencode --version
-          echo "✅ OpenCode installation successful and cached!"
-
   # ==========================================
   # 🔒 SECURITY & COMPLIANCE STREAM
   # ==========================================
   
   security-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: setup
     with:
       review-name: security
       prompt-file: .github/prompts/security.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   compliance-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, security-review]
+    needs: [security-review]
     with:
       review-name: compliance
       prompt-file: .github/prompts/compliance.prompt.md
       timeout-minutes: 18
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   safety-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, compliance-review]
+    needs: [compliance-review]
     with:
       review-name: safety
       prompt-file: .github/prompts/safety.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   # ==========================================
   # 📖 CODE QUALITY STREAM
@@ -88,33 +48,32 @@ jobs:
 
   readability-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: setup
     with:
       review-name: readability
       prompt-file: .github/prompts/readability.prompt.md
       timeout-minutes: 8
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   efficiency-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, readability-review]
+    needs: [readability-review]
     with:
       review-name: efficiency
       prompt-file: .github/prompts/efficiency.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   performance-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, efficiency-review]
+    needs: [efficiency-review]
     with:
       review-name: performance
       prompt-file: .github/prompts/performance.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   # ==========================================
   # 🏗️ ARCHITECTURE STREAM
@@ -122,33 +81,32 @@ jobs:
 
   architecture-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: setup
     with:
       review-name: architecture
       prompt-file: .github/prompts/architecture.prompt.md
       timeout-minutes: 20
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   scalability-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, architecture-review]
+    needs: [architecture-review]
     with:
       review-name: scalability
       prompt-file: .github/prompts/scalability.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   modularity-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, scalability-review]
+    needs: [scalability-review]
     with:
       review-name: modularity
       prompt-file: .github/prompts/modularity.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   # ==========================================
   # 👤 USER EXPERIENCE STREAM
@@ -156,33 +114,32 @@ jobs:
 
   usability-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: setup
     with:
       review-name: usability
       prompt-file: .github/prompts/usability.prompt.md
       timeout-minutes: 10
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   accessibility-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, usability-review]
+    needs: [usability-review]
     with:
       review-name: accessibility
       prompt-file: .github/prompts/accessibility.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   documentation-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, accessibility-review]
+    needs: [accessibility-review]
     with:
       review-name: documentation
       prompt-file: .github/prompts/documentation.prompt.md
       timeout-minutes: 8
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   # ==========================================
   # 🔀 CROSS-STREAM CONVERGENCE
@@ -190,43 +147,43 @@ jobs:
 
   reliability-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, performance-review, modularity-review]
+    needs: [performance-review, modularity-review]
     with:
       review-name: reliability
       prompt-file: .github/prompts/reliability.prompt.md
       timeout-minutes: 15
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   testability-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, modularity-review, safety-review]
+    needs: [modularity-review, safety-review]
     with:
       review-name: testability
       prompt-file: .github/prompts/testability.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   maintainability-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, documentation-review, performance-review, safety-review]
+    needs: [documentation-review, performance-review, safety-review]
     with:
       review-name: maintainability
       prompt-file: .github/prompts/maintainability.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   compatibility-review:
     uses: ./.github/workflows/opencode-review.yml
-    needs: [setup, reliability-review, testability-review]
+    needs: [reliability-review, testability-review]
     with:
       review-name: compatibility
       prompt-file: .github/prompts/compatibility.prompt.md
       timeout-minutes: 12
       use-cache: true
-      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
+      cache-key: opencode-${{ runner.os }}-${{ github.run_id }}
 
   # ==========================================
   # 🎯 FINAL COMPREHENSIVE SUMMARY
@@ -260,65 +217,9 @@ jobs:
           pattern: "*-review-results"
           merge-multiple: true
 
-      - name: Create Multi-Stream Report
+      - name: Create Multi-Stream Report  
         run: |
-          echo "# 🤯 Comprehensive Review Multi-Stream Report" > comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          echo "Generated on $(date)" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          echo "## 🌊 Multi-Stream Pipeline Architecture" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          echo "This review uses a **sophisticated multi-stream parallel architecture**:" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          
-          echo "### 🔒 Security & Compliance Stream" >> comprehensive-report.md
-          echo "Security → Compliance → Safety" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          
-          echo "### 📖 Code Quality Stream" >> comprehensive-report.md  
-          echo "Readability → Efficiency → Performance" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          
-          echo "### 🏗️ Architecture Stream" >> comprehensive-report.md
-          echo "Architecture → Scalability → Modularity" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          
-          echo "### 👤 User Experience Stream" >> comprehensive-report.md
-          echo "Usability → Accessibility → Documentation" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          
-          echo "### 🔀 Cross-Stream Convergence" >> comprehensive-report.md
-          echo "Multi-stream dependencies create sophisticated quality gates" >> comprehensive-report.md
-          echo "" >> comprehensive-report.md
-          
-          # Process results by stream
-          declare -A streams=(
-            ["Security & Compliance"]="security compliance safety"
-            ["Code Quality"]="readability efficiency performance"
-            ["Architecture"]="architecture scalability modularity"
-            ["User Experience"]="usability accessibility documentation"
-            ["Cross-Stream"]="reliability testability maintainability compatibility"
-          )
-          
-          for stream in "${!streams[@]}"; do
-            echo "## 🌊 $stream Stream Results" >> comprehensive-report.md
-            echo "" >> comprehensive-report.md
-            
-            for review in ${streams[$stream]}; do
-              echo "### 🔍 ${review^} Review" >> comprehensive-report.md
-              if [ -f "${review}-review-results.txt" ]; then
-                echo "\`\`\`" >> comprehensive-report.md
-                head -n 50 "${review}-review-results.txt" >> comprehensive-report.md
-                echo "\`\`\`" >> comprehensive-report.md
-              else
-                echo "❌ ${review^} review failed or did not produce results." >> comprehensive-report.md
-              fi
-              echo "" >> comprehensive-report.md
-            done
-          done
-          
-          echo "---" >> comprehensive-report.md
-          echo "*🚀 Generated by the Comprehensive Multi-Stream Review System*" >> comprehensive-report.md
+          .github/scripts/generate-report.sh multistream
 
       - name: Upload Multi-Stream Report
         uses: actions/upload-artifact@v4
@@ -328,49 +229,10 @@ jobs:
           path: comprehensive-report.md
 
       - name: Generate Stream Statistics
+        env:
+          STATS_FILE: "stream-stats.txt"
         run: |
-          echo "📊 Multi-Stream Review Statistics:" > stream-stats.txt
-          echo "=================================" >> stream-stats.txt
-          echo "🌊 4 Parallel Streams + Cross-Stream Convergence" >> stream-stats.txt
-          echo "" >> stream-stats.txt
-          
-          declare -A streams=(
-            ["🔒 Security & Compliance"]="security compliance safety"
-            ["📖 Code Quality"]="readability efficiency performance"  
-            ["🏗️ Architecture"]="architecture scalability modularity"
-            ["👤 User Experience"]="usability accessibility documentation"
-            ["🔀 Cross-Stream"]="reliability testability maintainability compatibility"
-          )
-          
-          total_success=0
-          total_reviews=16
-          
-          for stream in "${!streams[@]}"; do
-            echo "$stream Stream:" >> stream-stats.txt
-            stream_success=0
-            stream_total=0
-            
-            for review in ${streams[$stream]}; do
-              stream_total=$((stream_total + 1))
-              if [ -f "${review}-review-results.txt" ]; then
-                stream_success=$((stream_success + 1))
-                total_success=$((total_success + 1))
-                echo "  ✅ ${review^}: SUCCESS" >> stream-stats.txt
-              else
-                echo "  ❌ ${review^}: FAILED" >> stream-stats.txt
-              fi
-            done
-            echo "  Stream Success: ${stream_success}/${stream_total}" >> stream-stats.txt
-            echo "" >> stream-stats.txt
-          done
-          
-          echo "🎯 OVERALL MULTI-STREAM PIPELINE" >> stream-stats.txt
-          echo "===============================" >> stream-stats.txt
-          echo "Total Success Rate: ${total_success}/${total_reviews} ($(echo "scale=1; $total_success * 100 / $total_reviews" | bc -l)%)" >> stream-stats.txt
-          echo "" >> stream-stats.txt
-          echo "🌊 Multi-stream parallel execution with cross-dependencies!" >> stream-stats.txt
-          
-          cat stream-stats.txt
+          .github/scripts/generate-report.sh stats security compliance safety readability efficiency performance architecture scalability modularity usability accessibility documentation reliability testability maintainability compatibility
 
       - name: Upload Stream Statistics
         uses: actions/upload-artifact@v4

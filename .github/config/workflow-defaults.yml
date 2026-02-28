@@ -1,0 +1,37 @@
+# Shared workflow configuration for GHAW project
+# This file centralizes all magic values and common configurations
+
+# Default values for workflow execution
+timeouts:
+  short: 3      # For quick operations (setup, cache)
+  medium: 5     # For basic tests
+  long: 10      # For complex reviews
+  extended: 15  # For comprehensive operations
+  maximum: 20   # For heavy processing
+
+# OpenCode configuration
+opencode:
+  model: "opencode/big-pickle"
+  install_url: "https://opencode.ai/install"
+  config_path: ".github/opencode/config.json"
+  
+# Runner configuration
+runners:
+  standard: "ubuntu-latest"
+  act_compatible: "catthehacker/ubuntu:act-latest"
+
+# Cache configuration
+cache:
+  opencode_key_prefix: "opencode"
+  retention_days: 7
+
+# Review configuration
+reviews:
+  default_timeout: 10
+  max_output_lines: 50
+  use_cache_default: false
+
+# Report generation
+reports:
+  max_preview_lines: 50
+  date_format: "+%Y-%m-%d %H:%M:%S"

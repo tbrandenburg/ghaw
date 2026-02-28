@@ -30,10 +30,20 @@ on:
         required: false
         type: string
         default: 'opencode/big-pickle'
+      runner:
+        description: 'Runner to use for the job'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+
+env:
+  OPENCODE_INSTALL_URL: 'https://opencode.ai/install'
+  OPENCODE_CONFIG_PATH: '.github/opencode/config.json'
+  MAX_OUTPUT_LINES: 50
 
 jobs:
   review:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     
     steps:
@@ -56,14 +66,14 @@ jobs:
         if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
         run: |
           echo "Installing OpenCode..."
-          curl -fsSL https://opencode.ai/install | bash
+          curl -fsSL ${{ env.OPENCODE_INSTALL_URL }} | bash
           echo "OpenCode installation completed"
 
       - name: Configure OpenCode
         if: ${{ !inputs.use-cache || (inputs.use-cache && steps.cache-restore.outputs.cache-hit != 'true') }}
         run: |
           mkdir -p "$HOME/.config/opencode"
-          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
+          cp ${{ env.OPENCODE_CONFIG_PATH }} "$HOME/.config/opencode/config.json"
 
       - name: Setup OpenCode PATH
         run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
