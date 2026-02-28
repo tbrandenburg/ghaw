@@ -1,0 +1,82 @@
+name: OpenCode Review (Reusable)
+
+on:
+  workflow_call:
+    inputs:
+      review-name:
+        description: 'Name of the review (e.g., security, safety, performance)'
+        required: true
+        type: string
+      prompt-file:
+        description: 'Path to the prompt file (e.g., .github/prompts/security.prompt.md)'
+        required: true
+        type: string
+      timeout-minutes:
+        description: 'Timeout for the review job in minutes'
+        required: false
+        type: number
+        default: 10
+      use-cache:
+        description: 'Whether to use OpenCode caching (true) or fresh install (false)'
+        required: false
+        type: boolean
+        default: false
+      cache-key:
+        description: 'Cache key for OpenCode installation (only used when use-cache is true)'
+        required: false
+        type: string
+      opencode-model:
+        description: 'OpenCode model to use for the review'
+        required: false
+        type: string
+        default: 'opencode/big-pickle'
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Conditional: Use cache if specified
+      - name: Restore OpenCode from cache
+        if: ${{ inputs.use-cache }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.opencode
+            ~/.config/opencode
+          key: ${{ inputs.cache-key }}
+          fail-on-cache-miss: true
+
+      # Conditional: Fresh install if not using cache
+      - name: Install OpenCode
+        if: ${{ !inputs.use-cache }}
+        run: |
+          curl -fsSL https://opencode.ai/install | bash
+
+      - name: Configure OpenCode
+        if: ${{ !inputs.use-cache }}
+        run: |
+          mkdir -p "$HOME/.config/opencode"
+          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
+
+      - name: Setup OpenCode PATH
+        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+
+      - name: Test OpenCode Installation
+        run: opencode --version
+
+      - name: Run ${{ inputs.review-name }} Review
+        run: |
+          PROMPT=$(cat ${{ inputs.prompt-file }})
+          echo "$PROMPT" | opencode run --model "${{ inputs.opencode-model }}" > ${{ inputs.review-name }}-review-results.txt
+
+      - name: Upload ${{ inputs.review-name }} Review Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.review-name }}-review-results
+          path: ${{ inputs.review-name }}-review-results.txt

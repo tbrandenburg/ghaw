@@ -28,66 +28,22 @@ jobs:
           opencode --version
 
   security-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: ./.github/workflows/opencode-review.yml
     needs: setup
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install OpenCode
-        run: |
-          curl -fsSL https://opencode.ai/install | bash
-          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-
-      - name: Configure OpenCode
-        run: |
-          mkdir -p "$HOME/.config/opencode"
-          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
-
-      - name: Run Security Review
-        run: |
-          SECURITY_PROMPT=$(cat .github/prompts/security.prompt.md)
-          echo "$SECURITY_PROMPT" | opencode run --model "opencode/big-pickle" > security-review-results.txt
-
-      - name: Upload Security Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-review-results
-          path: security-review-results.txt
+    with:
+      review-name: security
+      prompt-file: .github/prompts/security.prompt.md
+      timeout-minutes: 10
+      use-cache: false
 
   safety-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: ./.github/workflows/opencode-review.yml
     needs: setup
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install OpenCode
-        run: |
-          curl -fsSL https://opencode.ai/install | bash
-          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-
-      - name: Configure OpenCode
-        run: |
-          mkdir -p "$HOME/.config/opencode"
-          cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
-
-      - name: Run Safety Review
-        run: |
-          SAFETY_PROMPT=$(cat .github/prompts/safety.prompt.md)
-          echo "$SAFETY_PROMPT" | opencode run --model "opencode/big-pickle" > safety-review-results.txt
-
-      - name: Upload Safety Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: safety-review-results
-          path: safety-review-results.txt
+    with:
+      review-name: safety
+      prompt-file: .github/prompts/safety.prompt.md
+      timeout-minutes: 10
+      use-cache: false
 
   summary:
     runs-on: ubuntu-latest

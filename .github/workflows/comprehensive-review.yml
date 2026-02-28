@@ -50,484 +50,180 @@ jobs:
   # ==========================================
   
   security-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: ./.github/workflows/opencode-review.yml
     needs: setup
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Security Review
-        run: |
-          SECURITY_PROMPT=$(cat .github/prompts/security.prompt.md)
-          echo "$SECURITY_PROMPT" | opencode run --model "opencode/big-pickle" > security-review-results.txt
-      - name: Upload Security Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-review-results
-          path: security-review-results.txt
+    with:
+      review-name: security
+      prompt-file: .github/prompts/security.prompt.md
+      timeout-minutes: 10
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   compliance-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 18
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, security-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Compliance Review
-        run: |
-          COMPLIANCE_PROMPT=$(cat .github/prompts/compliance.prompt.md)
-          echo "$COMPLIANCE_PROMPT" | opencode run --model "opencode/big-pickle" > compliance-review-results.txt
-      - name: Upload Compliance Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: compliance-review-results
-          path: compliance-review-results.txt
+    with:
+      review-name: compliance
+      prompt-file: .github/prompts/compliance.prompt.md
+      timeout-minutes: 18
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   safety-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, compliance-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Safety Review
-        run: |
-          SAFETY_PROMPT=$(cat .github/prompts/safety.prompt.md)
-          echo "$SAFETY_PROMPT" | opencode run --model "opencode/big-pickle" > safety-review-results.txt
-      - name: Upload Safety Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: safety-review-results
-          path: safety-review-results.txt
+    with:
+      review-name: safety
+      prompt-file: .github/prompts/safety.prompt.md
+      timeout-minutes: 10
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   # ==========================================
   # 📖 CODE QUALITY STREAM
   # ==========================================
 
   readability-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
+    uses: ./.github/workflows/opencode-review.yml
     needs: setup
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Readability Review
-        run: |
-          READABILITY_PROMPT=$(cat .github/prompts/readability.prompt.md)
-          echo "$READABILITY_PROMPT" | opencode run --model "opencode/big-pickle" > readability-review-results.txt
-      - name: Upload Readability Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: readability-review-results
-          path: readability-review-results.txt
+    with:
+      review-name: readability
+      prompt-file: .github/prompts/readability.prompt.md
+      timeout-minutes: 8
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   efficiency-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, readability-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Efficiency Review
-        run: |
-          EFFICIENCY_PROMPT=$(cat .github/prompts/efficiency.prompt.md)
-          echo "$EFFICIENCY_PROMPT" | opencode run --model "opencode/big-pickle" > efficiency-review-results.txt
-      - name: Upload Efficiency Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: efficiency-review-results
-          path: efficiency-review-results.txt
+    with:
+      review-name: efficiency
+      prompt-file: .github/prompts/efficiency.prompt.md
+      timeout-minutes: 10
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   performance-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, efficiency-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Performance Review
-        run: |
-          PERFORMANCE_PROMPT=$(cat .github/prompts/performance.prompt.md)
-          echo "$PERFORMANCE_PROMPT" | opencode run --model "opencode/big-pickle" > performance-review-results.txt
-      - name: Upload Performance Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: performance-review-results
-          path: performance-review-results.txt
+    with:
+      review-name: performance
+      prompt-file: .github/prompts/performance.prompt.md
+      timeout-minutes: 15
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   # ==========================================
   # 🏗️ ARCHITECTURE STREAM
   # ==========================================
 
   architecture-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    uses: ./.github/workflows/opencode-review.yml
     needs: setup
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Architecture Review
-        run: |
-          ARCHITECTURE_PROMPT=$(cat .github/prompts/architecture.prompt.md)
-          echo "$ARCHITECTURE_PROMPT" | opencode run --model "opencode/big-pickle" > architecture-review-results.txt
-      - name: Upload Architecture Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: architecture-review-results
-          path: architecture-review-results.txt
+    with:
+      review-name: architecture
+      prompt-file: .github/prompts/architecture.prompt.md
+      timeout-minutes: 20
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   scalability-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, architecture-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Scalability Review
-        run: |
-          SCALABILITY_PROMPT=$(cat .github/prompts/scalability.prompt.md)
-          echo "$SCALABILITY_PROMPT" | opencode run --model "opencode/big-pickle" > scalability-review-results.txt
-      - name: Upload Scalability Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: scalability-review-results
-          path: scalability-review-results.txt
+    with:
+      review-name: scalability
+      prompt-file: .github/prompts/scalability.prompt.md
+      timeout-minutes: 15
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   modularity-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, scalability-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Modularity Review
-        run: |
-          MODULARITY_PROMPT=$(cat .github/prompts/modularity.prompt.md)
-          echo "$MODULARITY_PROMPT" | opencode run --model "opencode/big-pickle" > modularity-review-results.txt
-      - name: Upload Modularity Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: modularity-review-results
-          path: modularity-review-results.txt
+    with:
+      review-name: modularity
+      prompt-file: .github/prompts/modularity.prompt.md
+      timeout-minutes: 10
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   # ==========================================
   # 👤 USER EXPERIENCE STREAM
   # ==========================================
 
   usability-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    uses: ./.github/workflows/opencode-review.yml
     needs: setup
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Usability Review
-        run: |
-          USABILITY_PROMPT=$(cat .github/prompts/usability.prompt.md)
-          echo "$USABILITY_PROMPT" | opencode run --model "opencode/big-pickle" > usability-review-results.txt
-      - name: Upload Usability Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: usability-review-results
-          path: usability-review-results.txt
+    with:
+      review-name: usability
+      prompt-file: .github/prompts/usability.prompt.md
+      timeout-minutes: 10
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   accessibility-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, usability-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Accessibility Review
-        run: |
-          ACCESSIBILITY_PROMPT=$(cat .github/prompts/accessibility.prompt.md)
-          echo "$ACCESSIBILITY_PROMPT" | opencode run --model "opencode/big-pickle" > accessibility-review-results.txt
-      - name: Upload Accessibility Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: accessibility-review-results
-          path: accessibility-review-results.txt
+    with:
+      review-name: accessibility
+      prompt-file: .github/prompts/accessibility.prompt.md
+      timeout-minutes: 12
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   documentation-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 8
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, accessibility-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Documentation Review
-        run: |
-          DOCUMENTATION_PROMPT=$(cat .github/prompts/documentation.prompt.md)
-          echo "$DOCUMENTATION_PROMPT" | opencode run --model "opencode/big-pickle" > documentation-review-results.txt
-      - name: Upload Documentation Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: documentation-review-results
-          path: documentation-review-results.txt
+    with:
+      review-name: documentation
+      prompt-file: .github/prompts/documentation.prompt.md
+      timeout-minutes: 8
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   # ==========================================
   # 🔀 CROSS-STREAM CONVERGENCE
   # ==========================================
 
   reliability-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, performance-review, modularity-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Reliability Review
-        run: |
-          RELIABILITY_PROMPT=$(cat .github/prompts/reliability.prompt.md)
-          echo "$RELIABILITY_PROMPT" | opencode run --model "opencode/big-pickle" > reliability-review-results.txt
-      - name: Upload Reliability Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: reliability-review-results
-          path: reliability-review-results.txt
+    with:
+      review-name: reliability
+      prompt-file: .github/prompts/reliability.prompt.md
+      timeout-minutes: 15
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   testability-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, modularity-review, safety-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Testability Review
-        run: |
-          TESTABILITY_PROMPT=$(cat .github/prompts/testability.prompt.md)
-          echo "$TESTABILITY_PROMPT" | opencode run --model "opencode/big-pickle" > testability-review-results.txt
-      - name: Upload Testability Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: testability-review-results
-          path: testability-review-results.txt
+    with:
+      review-name: testability
+      prompt-file: .github/prompts/testability.prompt.md
+      timeout-minutes: 12
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   maintainability-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, documentation-review, performance-review, safety-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Maintainability Review
-        run: |
-          MAINTAINABILITY_PROMPT=$(cat .github/prompts/maintainability.prompt.md)
-          echo "$MAINTAINABILITY_PROMPT" | opencode run --model "opencode/big-pickle" > maintainability-review-results.txt
-      - name: Upload Maintainability Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: maintainability-review-results
-          path: maintainability-review-results.txt
+    with:
+      review-name: maintainability
+      prompt-file: .github/prompts/maintainability.prompt.md
+      timeout-minutes: 12
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   compatibility-review:
-    runs-on: ubuntu-latest
-    timeout-minutes: 12
+    uses: ./.github/workflows/opencode-review.yml
     needs: [setup, reliability-review, testability-review]
-    
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Restore OpenCode from cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.opencode
-            ~/.config/opencode
-          key: ${{ needs.setup.outputs.opencode-cache-key }}
-          fail-on-cache-miss: true
-      - name: Setup OpenCode PATH
-        run: echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-      - name: Run Compatibility Review
-        run: |
-          COMPATIBILITY_PROMPT=$(cat .github/prompts/compatibility.prompt.md)
-          echo "$COMPATIBILITY_PROMPT" | opencode run --model "opencode/big-pickle" > compatibility-review-results.txt
-      - name: Upload Compatibility Review Results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: compatibility-review-results
-          path: compatibility-review-results.txt
+    with:
+      review-name: compatibility
+      prompt-file: .github/prompts/compatibility.prompt.md
+      timeout-minutes: 12
+      use-cache: true
+      cache-key: ${{ needs.setup.outputs.opencode-cache-key }}
 
   # ==========================================
   # 🎯 FINAL COMPREHENSIVE SUMMARY
@@ -679,4 +375,3 @@ jobs:
         with:
           name: multi-stream-statistics
           path: stream-stats.txt
-
