@@ -81,12 +81,18 @@
     "last_verified": "2026-02-28T15:30:00Z"
   },
   "TASK_CURRENT_COMMIT_PUSH": {
-    "status": "pending",
-    "evidence": [],
+    "status": "done",
+    "evidence": [
+      "git status: 6 files modified (.github/workflows/*.yml, dev/state/task-ledger.json)",
+      "git diff --stat: 71 insertions(+), 374 deletions(-) showing major workflow simplification",
+      "git add .: Staged all changes",
+      "git commit 26d61b4: refactor: simplify OpenCode workflow system",
+      "git push: Successfully pushed to https://github.com/tbrandenburg/ghaw.git main -> main"
+    ],
     "last_verified": "2026-02-28T15:35:00Z"
   },
   "TASK_CURRENT_OBSERVE_CI": {
-    "status": "pending", 
+    "status": "in_progress", 
     "evidence": [],
     "last_verified": "2026-02-28T15:35:00Z"
   }

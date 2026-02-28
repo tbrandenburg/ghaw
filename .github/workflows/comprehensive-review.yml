@@ -1,1 +1,229 @@
-cache-key: opencode-ubuntu-latest-${{ github.run_id }}
+name: Comprehensive Review Test
+
+on:
+  push:
+  workflow_dispatch:
+  schedule:
+    # Run daily at 2:00 AM UTC (nighttime for most timezones)
+    - cron: '0 2 * * *'
+
+env:
+  CACHE_KEY_PREFIX: opencode
+  OPENCODE_MODEL: opencode/big-pickle
+
+jobs:
+  # ==========================================
+  # 🔒 SECURITY & COMPLIANCE STREAM
+  # ==========================================
+  
+  security-review:
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: security
+      prompt-file: .opencode/commands/security-review.md
+      timeout-minutes: 10
+      model: opencode/big-pickle
+
+  compliance-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [security-review]
+    with:
+      run-name: compliance
+      prompt-file: .opencode/commands/compliance-review.md
+      timeout-minutes: 18
+      model: opencode/big-pickle
+
+  safety-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [compliance-review]
+    with:
+      run-name: safety
+      prompt-file: .opencode/commands/safety-review.md
+      timeout-minutes: 10
+      model: opencode/big-pickle
+
+  # ==========================================
+  # 📖 CODE QUALITY STREAM
+  # ==========================================
+
+  readability-review:
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: readability
+      prompt-file: .opencode/commands/readability-review.md
+      timeout-minutes: 8
+      model: opencode/big-pickle
+
+  efficiency-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [readability-review]
+    with:
+      run-name: efficiency
+      prompt-file: .opencode/commands/efficiency-review.md
+      timeout-minutes: 10
+      model: opencode/big-pickle
+
+  performance-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [efficiency-review]
+    with:
+      run-name: performance
+      prompt-file: .opencode/commands/performance-review.md
+      timeout-minutes: 15
+      model: opencode/big-pickle
+
+  # ==========================================
+  # 🏗️ ARCHITECTURE STREAM
+  # ==========================================
+
+  architecture-review:
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: architecture
+      prompt-file: .opencode/commands/architecture-review.md
+      timeout-minutes: 20
+      model: opencode/big-pickle
+
+  scalability-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [architecture-review]
+    with:
+      run-name: scalability
+      prompt-file: .opencode/commands/scalability-review.md
+      timeout-minutes: 15
+      model: opencode/big-pickle
+
+  modularity-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [scalability-review]
+    with:
+      run-name: modularity
+      prompt-file: .opencode/commands/modularity-review.md
+      timeout-minutes: 10
+      model: opencode/big-pickle
+
+  # ==========================================
+  # 👤 USER EXPERIENCE STREAM
+  # ==========================================
+
+  usability-review:
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: usability
+      prompt-file: .opencode/commands/usability-review.md
+      timeout-minutes: 10
+      model: opencode/big-pickle
+
+  accessibility-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [usability-review]
+    with:
+      run-name: accessibility
+      prompt-file: .opencode/commands/accessibility-review.md
+      timeout-minutes: 12
+      model: opencode/big-pickle
+
+  documentation-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [accessibility-review]
+    with:
+      run-name: documentation
+      prompt-file: .opencode/commands/documentation-review.md
+      timeout-minutes: 8
+      model: opencode/big-pickle
+
+  # ==========================================
+  # 🔀 CROSS-STREAM CONVERGENCE
+  # ==========================================
+
+  reliability-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [performance-review, modularity-review]
+    with:
+      run-name: reliability
+      prompt-file: .opencode/commands/reliability-review.md
+      timeout-minutes: 15
+      model: opencode/big-pickle
+
+  testability-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [modularity-review, safety-review]
+    with:
+      run-name: testability
+      prompt-file: .opencode/commands/testability-review.md
+      timeout-minutes: 12
+      model: opencode/big-pickle
+
+  maintainability-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [documentation-review, performance-review, safety-review]
+    with:
+      run-name: maintainability
+      prompt-file: .opencode/commands/maintainability-review.md
+      timeout-minutes: 12
+      model: opencode/big-pickle
+
+  compatibility-review:
+    uses: ./.github/workflows/opencode-run.yml
+    needs: [reliability-review, testability-review]
+    with:
+      run-name: compatibility
+      prompt-file: .opencode/commands/compatibility-review.md
+      timeout-minutes: 12
+      model: opencode/big-pickle
+
+  # ==========================================
+  # 🎯 FINAL COMPREHENSIVE SUMMARY
+  # ==========================================
+
+  summary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [
+      # Security & Compliance Stream
+      security-review, compliance-review, safety-review,
+      # Code Quality Stream  
+      readability-review, efficiency-review, performance-review,
+      # Architecture Stream
+      architecture-review, scalability-review, modularity-review,
+      # User Experience Stream
+      usability-review, accessibility-review, documentation-review,
+      # Cross-Stream Convergence
+      reliability-review, testability-review, maintainability-review, compatibility-review
+    ]
+    if: always()
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download All Review Results
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: "*-results"
+          merge-multiple: true
+
+      - name: Create Multi-Stream Report  
+        run: |
+          .github/scripts/generate-report.sh multistream
+
+      - name: Upload Multi-Stream Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: comprehensive-multi-stream-report
+          path: comprehensive-report.md
+
+      - name: Generate Stream Statistics
+        env:
+          STATS_FILE: "stream-stats.txt"
+        run: |
+          .github/scripts/generate-report.sh stats security compliance safety readability efficiency performance architecture scalability modularity usability accessibility documentation reliability testability maintainability compatibility
+
+      - name: Upload Stream Statistics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: multi-stream-statistics
+          path: stream-stats.txt
