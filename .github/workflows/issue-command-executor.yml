@@ -106,15 +106,16 @@ jobs:
             const agent = '${{ needs.parse-and-check.outputs.agent }}';
             const runId = context.runId;
             
-            const results = `${{ needs.execute-opencode.outputs.results }}`;
+            // Use toJSON() to properly escape the results content
+            const results = ${{ toJSON(needs.execute-opencode.outputs.results) }};
             const resultsTruncated = '${{ needs.execute-opencode.outputs.results-truncated }}' === 'true';
             const artifactName = '${{ needs.execute-opencode.outputs.artifact-name }}';
             
             let executionType;
             if (isAgentCommand) {
-              executionType = `*${agent} /${command} (agent command)`;
+              executionType = '*' + agent + ' /' + command + ' (agent command)';
             } else {
-              executionType = `/${command} (direct command)`;
+              executionType = '/' + command + ' (direct command)';
             }
             
             let commentBody;
