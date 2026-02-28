@@ -1,0 +1,107 @@
+name: Execute OpenCode Commands from Issue Comments
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  check-and-execute:
+    # Only run if the comment author is the repository owner
+    if: github.event.comment.author_association == 'OWNER'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+      actions: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Parse comment for commands
+        id: parse-comment
+        run: |
+          comment="${{ github.event.comment.body }}"
+          echo "Original comment: $comment"
+          
+          # Check if comment contains a command or agent command
+          if [[ "$comment" =~ ^\*([a-zA-Z0-9_-]+)[[:space:]]+/([a-zA-Z0-9_-]+)(.*)$ ]]; then
+            # Agent command format: *agent /command PROMPT
+            agent="${BASH_REMATCH[1]}"
+            command="${BASH_REMATCH[2]}"
+            prompt="${BASH_REMATCH[3]}"
+            # Remove leading whitespace from prompt
+            prompt=$(echo "$prompt" | sed 's/^[[:space:]]*//')
+            
+            echo "Detected agent command"
+            echo "agent=$agent" >> $GITHUB_OUTPUT
+            echo "command=$command" >> $GITHUB_OUTPUT
+            echo "prompt<<EOF" >> $GITHUB_OUTPUT
+            echo "$prompt" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "has_command=true" >> $GITHUB_OUTPUT
+            echo "is_agent_command=true" >> $GITHUB_OUTPUT
+            
+          elif [[ "$comment" =~ ^/([a-zA-Z0-9_-]+)(.*)$ ]]; then
+            # Direct command format: /command PROMPT
+            command="${BASH_REMATCH[1]}"
+            prompt="${BASH_REMATCH[2]}"
+            # Remove leading whitespace from prompt
+            prompt=$(echo "$prompt" | sed 's/^[[:space:]]*//')
+            
+            echo "Detected direct command"
+            echo "command=$command" >> $GITHUB_OUTPUT
+            echo "prompt<<EOF" >> $GITHUB_OUTPUT
+            echo "$prompt" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            echo "has_command=true" >> $GITHUB_OUTPUT
+            echo "is_agent_command=false" >> $GITHUB_OUTPUT
+            
+          else
+            echo "No command detected in comment"
+            echo "has_command=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Execute OpenCode command
+        if: steps.parse-comment.outputs.has_command == 'true'
+        uses: ./.github/workflows/opencode-run.yml
+        with:
+          run-name: "issue-${{ github.event.issue.number }}-comment-${{ github.event.comment.id }}"
+          command: ${{ steps.parse-comment.outputs.command }}
+          prompt: ${{ steps.parse-comment.outputs.prompt }}
+          agent: ${{ steps.parse-comment.outputs.is_agent_command == 'true' && steps.parse-comment.outputs.agent || 'build' }}
+          timeout-minutes: 30
+      
+      - name: Comment execution status
+        if: steps.parse-comment.outputs.has_command == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const command = `${{ steps.parse-comment.outputs.command }}`;
+            const isAgentCommand = `${{ steps.parse-comment.outputs.is_agent_command }}` === 'true';
+            const agent = `${{ steps.parse-comment.outputs.agent }}`;
+            const runId = context.runId;
+            
+            let executionType;
+            if (isAgentCommand) {
+              executionType = `\`*${agent} /${command}\` (agent command)`;
+            } else {
+              executionType = `\`/${command}\` (direct command)`;
+            }
+            
+            const commentBody = `🤖 **OpenCode Execution Started**
+            
+            **Command:** ${executionType}
+            **Run ID:** ${runId}
+            **Status:** Executing...
+            
+            You can track the progress in the [Actions tab](${context.payload.repository.html_url}/actions/runs/${runId}).
+            
+            Results will be available as artifacts when the run completes.`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
