@@ -64,6 +64,7 @@ jobs:
       
       - name: Execute OpenCode command
         if: steps.parse-comment.outputs.has_command == 'true'
+        id: execute-opencode
         uses: ./.github/workflows/opencode-run.yml
         with:
           run-name: "issue-${{ github.event.issue.number }}-comment-${{ github.event.comment.id }}"
@@ -72,34 +73,47 @@ jobs:
           agent: ${{ steps.parse-comment.outputs.is_agent_command == 'true' && steps.parse-comment.outputs.agent || 'build' }}
           timeout-minutes: 30
       
-      - name: Comment execution status
-        if: steps.parse-comment.outputs.has_command == 'true'
+      - name: Comment execution results
+        if: steps.parse-comment.outputs.has_command == 'true' && always()
         uses: actions/github-script@v7
         with:
           script: |
-            const command = `${{ steps.parse-comment.outputs.command }}`;
-            const isAgentCommand = `${{ steps.parse-comment.outputs.is_agent_command }}` === 'true';
-            const agent = `${{ steps.parse-comment.outputs.agent }}`;
+            const command = '${{ steps.parse-comment.outputs.command }}';
+            const isAgentCommand = '${{ steps.parse-comment.outputs.is_agent_command }}' === 'true';
+            const agent = '${{ steps.parse-comment.outputs.agent }}';
             const runId = context.runId;
+            
+            const results = `${{ steps.execute-opencode.outputs.results }}`;
+            const resultsTruncated = '${{ steps.execute-opencode.outputs.results-truncated }}' === 'true';
+            const artifactName = '${{ steps.execute-opencode.outputs.artifact-name }}';
             
             let executionType;
             if (isAgentCommand) {
-              executionType = `\`*${agent} /${command}\` (agent command)`;
+              executionType = `*${agent} /${command} (agent command)`;
             } else {
-              executionType = `\`/${command}\` (direct command)`;
+              executionType = `/${command} (direct command)`;
             }
             
-            const commentBody = `🤖 **OpenCode Execution Started**
-            
-            **Command:** ${executionType}
-            **Run ID:** ${runId}
-            **Status:** Executing...
-            
-            You can track the progress in the [Actions tab](${context.payload.repository.html_url}/actions/runs/${runId}).
-            
-            Results will be available as artifacts when the run completes.`;
+            let commentBody;
+            if (results && results.trim() !== '' && results !== '❌ No results file generated') {
+              const truncationNote = resultsTruncated ? 
+                '\n\n📎 **Full results available in artifact:** [' + artifactName + '](' + context.payload.repository.html_url + '/actions/runs/' + runId + ')' : '';
+              
+              commentBody = '🤖 **OpenCode Execution Complete**\n\n' +
+                '**Command:** `' + executionType + '`\n' +
+                '**Run ID:** ' + runId + '\n' +
+                '**Status:** ✅ Completed\n\n' +
+                '## Results\n\n' +
+                results + truncationNote;
+            } else {
+              commentBody = '🤖 **OpenCode Execution Complete**\n\n' +
+                '**Command:** `' + executionType + '`\n' +
+                '**Run ID:** ' + runId + '\n' +
+                '**Status:** ⚠️ No output generated\n\n' +
+                '📎 **Check the full logs:** [View run details](' + context.payload.repository.html_url + '/actions/runs/' + runId + ')';
+            }
 
-            await github.rest.issues.createComment({
+            return await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,

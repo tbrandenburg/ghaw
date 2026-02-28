@@ -39,6 +39,16 @@ on:
         required: false
         type: string
         default: 'ubuntu-latest'
+    outputs:
+      results:
+        description: 'The output results from OpenCode (truncated if too large)'
+        value: ${{ jobs.run.outputs.results }}
+      results-truncated:
+        description: 'Whether the results were truncated due to size'
+        value: ${{ jobs.run.outputs.results-truncated }}
+      artifact-name:
+        description: 'Name of the uploaded artifact containing full results'
+        value: ${{ jobs.run.outputs.artifact-name }}
 
 env:
   OPENCODE_INSTALL_URL: 'https://opencode.ai/install'
@@ -48,6 +58,10 @@ jobs:
   run:
     runs-on: ${{ inputs.runner }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
+    outputs:
+      results: ${{ steps.process-results.outputs.results }}
+      results-truncated: ${{ steps.process-results.outputs.results-truncated }}
+      artifact-name: ${{ steps.process-results.outputs.artifact-name }}
     
     steps:
       - name: Checkout
@@ -89,6 +103,61 @@ jobs:
           else
             echo "Error: At least one of 'command', 'prompt', or 'prompt-file' must be provided" >&2
             exit 1
+          fi
+
+      - name: Process results for output
+        id: process-results
+        if: always()
+        run: |
+          RESULTS_FILE="${{ inputs.run-name }}-results.txt"
+          ARTIFACT_NAME="${{ inputs.run-name }}-results"
+          
+          # Check if results file exists
+          if [ -f "$RESULTS_FILE" ]; then
+            # Get file size in bytes
+            FILE_SIZE=$(wc -c < "$RESULTS_FILE")
+            MAX_SIZE=65000  # GitHub Actions output limit is ~65KB
+            
+            echo "artifact-name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+            
+            if [ $FILE_SIZE -gt $MAX_SIZE ]; then
+              # File is too large, truncate and indicate truncation
+              echo "results-truncated=true" >> $GITHUB_OUTPUT
+              
+              # Create truncated version with summary
+              {
+                echo "# OpenCode Results (Truncated)"
+                echo ""
+                echo "⚠️ **Results were truncated due to size limits. Full results are available in the artifact.**"
+                echo ""
+                echo "**File size:** $FILE_SIZE bytes (limit: $MAX_SIZE bytes)"
+                echo ""
+                echo "---"
+                echo ""
+                head -c $((MAX_SIZE - 1000)) "$RESULTS_FILE"
+                echo ""
+                echo ""
+                echo "..."
+                echo ""
+                echo "**[Full results available in artifact: $ARTIFACT_NAME]**"
+              } > truncated-results.txt
+              
+              # Set truncated results as output
+              echo "results<<EOF" >> $GITHUB_OUTPUT
+              cat truncated-results.txt >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            else
+              # File is small enough, use full content
+              echo "results-truncated=false" >> $GITHUB_OUTPUT
+              echo "results<<EOF" >> $GITHUB_OUTPUT
+              cat "$RESULTS_FILE" >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+            fi
+          else
+            # No results file found
+            echo "results-truncated=false" >> $GITHUB_OUTPUT
+            echo "results=❌ No results file generated" >> $GITHUB_OUTPUT
+            echo "artifact-name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload ${{ inputs.run-name }} Results
