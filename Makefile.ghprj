@@ -48,7 +48,6 @@ COLOR_OPEN        ?= C5DEF5
 COLOR_READY       ?= 0E8A16
 COLOR_INPROGRESS  ?= FBCA04
 COLOR_REVIEWED    ?= 1D76DB
-COLOR_VERIFIED    ?= 5319E7
 COLOR_CLOSED      ?= D4C5F9
 COLOR_RELEASED    ?= 0052CC
 
@@ -59,8 +58,7 @@ COLOR_RELEASED    ?= 0052CC
 DESC_OPEN         ?= New or unrefined work. Collaborative grooming allowed.
 DESC_READY        ?= Definition of Ready met. Pullable backlog (PO gate).
 DESC_INPROGRESS   ?= Work pulled by team; implementation underway.
-DESC_REVIEWED     ?= PR approved + CI green. Awaiting PO verification.
-DESC_VERIFIED     ?= Acceptance criteria satisfied. Approved to merge PR to main.
+DESC_REVIEWED     ?= PR approved + CI green. Ready to merge to main.
 DESC_CLOSED       ?= PR merged to main. Code complete. Task lifecycle ends.
 DESC_RELEASED     ?= OPTIONAL metadata: included in a production release. NOT a task state.
 
@@ -82,7 +80,7 @@ endef
 define ASK_PREFIX
 if [ -z "$(WORKFLOW_PREFIX)" ] && [ "$(INTERACTIVE)" = "true" ]; then \
   echo "Choose label prefix (press Enter for no prefix):"; \
-  echo "  1) No prefix (default) - Labels: open, ready, closed"; \
+  echo "  1) No prefix (default) - Labels: open, ready, reviewed, closed"; \
   echo "  2) workflow/ - Labels: workflow/open, workflow/ready"; \
   echo "  3) state/ - Labels: state/open, state/ready"; \
   echo "  4) oslc/ - Labels: oslc/open, oslc/ready"; \
@@ -109,7 +107,6 @@ WORKFLOW_SPECS = \
   $(call workflow_name,ready)|$(COLOR_READY)|$(DESC_READY) \
   $(call workflow_name,in-progress)|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS) \
   $(call workflow_name,reviewed)|$(COLOR_REVIEWED)|$(DESC_REVIEWED) \
-  $(call workflow_name,verified)|$(COLOR_VERIFIED)|$(DESC_VERIFIED) \
   $(call workflow_name,closed)|$(COLOR_CLOSED)|$(DESC_CLOSED) \
   $(call workflow_name,released)|$(COLOR_RELEASED)|$(DESC_RELEASED)
 
@@ -145,7 +142,6 @@ _setup:
 	echo "ready|$(COLOR_READY)|$(DESC_READY)" >> /tmp/workflow_specs.txt; \
 	echo "in-progress|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS)" >> /tmp/workflow_specs.txt; \
 	echo "reviewed|$(COLOR_REVIEWED)|$(DESC_REVIEWED)" >> /tmp/workflow_specs.txt; \
-	echo "verified|$(COLOR_VERIFIED)|$(DESC_VERIFIED)" >> /tmp/workflow_specs.txt; \
 	echo "closed|$(COLOR_CLOSED)|$(DESC_CLOSED)" >> /tmp/workflow_specs.txt; \
 	echo "released|$(COLOR_RELEASED)|$(DESC_RELEASED)" >> /tmp/workflow_specs.txt; \
 	while IFS='|' read -r name color desc; do \
@@ -181,7 +177,6 @@ _setup_dry_run:
 	echo "ready|$(COLOR_READY)|$(DESC_READY)" >> /tmp/workflow_specs.txt; \
 	echo "in-progress|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS)" >> /tmp/workflow_specs.txt; \
 	echo "reviewed|$(COLOR_REVIEWED)|$(DESC_REVIEWED)" >> /tmp/workflow_specs.txt; \
-	echo "verified|$(COLOR_VERIFIED)|$(DESC_VERIFIED)" >> /tmp/workflow_specs.txt; \
 	echo "closed|$(COLOR_CLOSED)|$(DESC_CLOSED)" >> /tmp/workflow_specs.txt; \
 	echo "released|$(COLOR_RELEASED)|$(DESC_RELEASED)" >> /tmp/workflow_specs.txt; \
 	while IFS='|' read -r name color desc; do \
