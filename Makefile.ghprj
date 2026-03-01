@@ -1,0 +1,204 @@
+# Makefile.ghprj
+# GitHub Project WORKFLOW SETUP
+#
+# Ensures OSLC-aligned workflow task state labels
+# and optional metadata labels exist in the current GitHub repo.
+#
+# IMPORTANT:
+#   - "closed" = PR merged to main (code complete)
+#   - "released" = OPTIONAL metadata label (NOT a task state)
+#
+# Requirements:
+#   - GitHub CLI (gh)
+#   - jq
+#   - python3
+#   - Authenticated: gh auth status
+#
+# Usage:
+#   Default (non-interactive, no prefix):
+#     make -f Makefile.ghprj setup
+#     make -f Makefile.ghprj setup-dry-run
+#
+#   Interactive (will prompt for prefix choice):
+#     make -f Makefile.ghprj setup INTERACTIVE=true
+#     make -f Makefile.ghprj setup-dry-run INTERACTIVE=true
+#
+#   Non-interactive with specific prefix:
+#     make -f Makefile.ghprj setup WORKFLOW_PREFIX=workflow
+#     make -f Makefile.ghprj setup-dry-run WORKFLOW_PREFIX=state
+#
+#   List current labels:
+#     make -f Makefile.ghprj setup-list
+#
+
+SHELL := /bin/bash
+.ONESHELL:
+.SHELLFLAGS := -euo pipefail -c
+
+REPO ?= $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
+
+# Optional namespace (e.g. WORKFLOW_PREFIX=state → state/open)
+WORKFLOW_PREFIX ?=
+
+# -------------------------
+# Colors (hex without '#')
+# -------------------------
+
+COLOR_OPEN        ?= C5DEF5
+COLOR_READY       ?= 0E8A16
+COLOR_INPROGRESS  ?= FBCA04
+COLOR_REVIEWED    ?= 1D76DB
+COLOR_VERIFIED    ?= 5319E7
+COLOR_CLOSED      ?= D4C5F9
+COLOR_RELEASED    ?= 0052CC
+
+# -------------------------
+# Descriptions
+# -------------------------
+
+DESC_OPEN         ?= New or unrefined work. Collaborative grooming allowed.
+DESC_READY        ?= Definition of Ready met. Pullable backlog (PO gate).
+DESC_INPROGRESS   ?= Work pulled by team; implementation underway.
+DESC_REVIEWED     ?= PR approved + CI green. Awaiting PO verification.
+DESC_VERIFIED     ?= Acceptance criteria satisfied. Approved to merge PR to main.
+DESC_CLOSED       ?= PR merged to main. Code complete. Task lifecycle ends.
+DESC_RELEASED     ?= OPTIONAL metadata: included in a production release. NOT a task state.
+
+# -------------------------
+# Internal Guards
+# -------------------------
+
+define REQUIRE_TOOLS
+command -v gh >/dev/null 2>&1 || { echo "ERROR: gh not found"; exit 1; }
+command -v jq >/dev/null 2>&1 || { echo "ERROR: jq not found"; exit 1; }
+command -v python3 >/dev/null 2>&1 || { echo "ERROR: python3 not found"; exit 1; }
+gh auth status >/dev/null 2>&1 || { echo "ERROR: gh not authenticated"; exit 1; }
+endef
+
+define REQUIRE_REPO
+[ -n "$(REPO)" ] || { echo "ERROR: Could not resolve repo. Set REPO=owner/name"; exit 1; }
+endef
+
+define ASK_PREFIX
+if [ -z "$(WORKFLOW_PREFIX)" ] && [ "$(INTERACTIVE)" = "true" ]; then \
+  echo "Choose label prefix (press Enter for no prefix):"; \
+  echo "  1) No prefix (default) - Labels: open, ready, closed"; \
+  echo "  2) workflow/ - Labels: workflow/open, workflow/ready"; \
+  echo "  3) state/ - Labels: state/open, state/ready"; \
+  echo "  4) oslc/ - Labels: oslc/open, oslc/ready"; \
+  echo "  5) Custom prefix"; \
+  echo -n "Choice [1]: "; \
+  read choice; \
+  case "$$choice" in \
+    ""|1) PREFIX="" ;; \
+    2) PREFIX="workflow" ;; \
+    3) PREFIX="state" ;; \
+    4) PREFIX="oslc" ;; \
+    5) echo -n "Enter custom prefix: "; read PREFIX ;; \
+    *) echo "Invalid choice, using no prefix"; PREFIX="" ;; \
+  esac; \
+else \
+  PREFIX="$(WORKFLOW_PREFIX)"; \
+fi
+endef
+
+workflow_name = $(strip $(WORKFLOW_PREFIX))$(if $(strip $(WORKFLOW_PREFIX)),/,)$(1)
+
+WORKFLOW_SPECS = \
+  $(call workflow_name,open)|$(COLOR_OPEN)|$(DESC_OPEN) \
+  $(call workflow_name,ready)|$(COLOR_READY)|$(DESC_READY) \
+  $(call workflow_name,in-progress)|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS) \
+  $(call workflow_name,reviewed)|$(COLOR_REVIEWED)|$(DESC_REVIEWED) \
+  $(call workflow_name,verified)|$(COLOR_VERIFIED)|$(DESC_VERIFIED) \
+  $(call workflow_name,closed)|$(COLOR_CLOSED)|$(DESC_CLOSED) \
+  $(call workflow_name,released)|$(COLOR_RELEASED)|$(DESC_RELEASED)
+
+.PHONY: setup setup-dry-run setup-list _setup _setup_dry_run
+
+# -------------------------
+# Public Targets
+# -------------------------
+
+setup: _setup
+
+setup-dry-run: _setup_dry_run
+
+setup-list:
+	@$(REQUIRE_TOOLS)
+	@$(REQUIRE_REPO)
+	@echo "Repo: $(REPO)"
+	@gh api "repos/$(REPO)/labels?per_page=100" --paginate \
+	  | jq -r '.[] | [.name,.color,(.description // "")] | @tsv' \
+	  | column -t -s $$'\t'
+
+# -------------------------
+# Apply Setup (Idempotent)
+# -------------------------
+
+_setup:
+	@$(REQUIRE_TOOLS)
+	@$(REQUIRE_REPO)
+	@$(ASK_PREFIX)
+	@echo "Applying workflow setup to repo: $(REPO)"
+	@if [ -n "$$PREFIX" ]; then echo "Using prefix: $$PREFIX/"; else echo "Using no prefix"; fi
+	@echo "open|$(COLOR_OPEN)|$(DESC_OPEN)" > /tmp/workflow_specs.txt; \
+	echo "ready|$(COLOR_READY)|$(DESC_READY)" >> /tmp/workflow_specs.txt; \
+	echo "in-progress|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS)" >> /tmp/workflow_specs.txt; \
+	echo "reviewed|$(COLOR_REVIEWED)|$(DESC_REVIEWED)" >> /tmp/workflow_specs.txt; \
+	echo "verified|$(COLOR_VERIFIED)|$(DESC_VERIFIED)" >> /tmp/workflow_specs.txt; \
+	echo "closed|$(COLOR_CLOSED)|$(DESC_CLOSED)" >> /tmp/workflow_specs.txt; \
+	echo "released|$(COLOR_RELEASED)|$(DESC_RELEASED)" >> /tmp/workflow_specs.txt; \
+	while IFS='|' read -r name color desc; do \
+	  if [ -n "$$PREFIX" ]; then \
+	    name="$$PREFIX/$$name"; \
+	  fi; \
+	  encoded="$$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1], safe=""))' "$$name")"; \
+	  if gh api "repos/$(REPO)/labels/$$encoded" >/dev/null 2>&1; then \
+	    echo "UPDATE  $$name"; \
+	    gh api -X PATCH "repos/$(REPO)/labels/$$encoded" \
+	      -f new_name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
+	  else \
+	    echo "CREATE  $$name"; \
+	    gh api -X POST "repos/$(REPO)/labels" \
+	      -f name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
+	  fi; \
+	done < /tmp/workflow_specs.txt; \
+	rm -f /tmp/workflow_specs.txt
+	@echo "Workflow setup complete."
+
+# -------------------------
+# Dry Run
+# -------------------------
+
+_setup_dry_run:
+	@$(REQUIRE_TOOLS)
+	@$(REQUIRE_REPO)
+	@$(ASK_PREFIX)
+	@echo "Dry-run workflow setup for repo: $(REPO)"
+	@if [ -n "$$PREFIX" ]; then echo "Using prefix: $$PREFIX/"; else echo "Using no prefix"; fi
+	@existing="$$(gh api "repos/$(REPO)/labels?per_page=100" --paginate | jq -r '.[] | [.name,.color,(.description // "")] | @tsv')"; \
+	echo "open|$(COLOR_OPEN)|$(DESC_OPEN)" > /tmp/workflow_specs.txt; \
+	echo "ready|$(COLOR_READY)|$(DESC_READY)" >> /tmp/workflow_specs.txt; \
+	echo "in-progress|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS)" >> /tmp/workflow_specs.txt; \
+	echo "reviewed|$(COLOR_REVIEWED)|$(DESC_REVIEWED)" >> /tmp/workflow_specs.txt; \
+	echo "verified|$(COLOR_VERIFIED)|$(DESC_VERIFIED)" >> /tmp/workflow_specs.txt; \
+	echo "closed|$(COLOR_CLOSED)|$(DESC_CLOSED)" >> /tmp/workflow_specs.txt; \
+	echo "released|$(COLOR_RELEASED)|$(DESC_RELEASED)" >> /tmp/workflow_specs.txt; \
+	while IFS='|' read -r name color desc; do \
+	  if [ -n "$$PREFIX" ]; then \
+	    name="$$PREFIX/$$name"; \
+	  fi; \
+	  match="$$(printf "%s\n" "$$existing" | awk -F'\t' -v n="$$name" '$$1==n{print $$0}')" || true; \
+	  if [ -z "$$match" ]; then \
+	    echo "WOULD CREATE  $$name"; \
+	  else \
+	    cur_color="$$(printf "%s" "$$match" | awk -F'\t' '{print $$2}')" ; \
+	    cur_desc="$$(printf "%s" "$$match" | awk -F'\t' '{print $$3}')" ; \
+	    if [ "$$cur_color" != "$$color" ] || [ "$$cur_desc" != "$$desc" ]; then \
+	      echo "WOULD UPDATE  $$name"; \
+	    else \
+	      echo "OK           $$name"; \
+	    fi; \
+	  fi; \
+	done < /tmp/workflow_specs.txt; \
+	rm -f /tmp/workflow_specs.txt
