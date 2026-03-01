@@ -78,10 +78,34 @@ jobs:
             opencode --version
           else
             echo "OpenCode not found or not working, installing..."
-            curl -fsSL ${{ env.OPENCODE_INSTALL_URL }} | bash
+            
+            # Add debug information
+            echo "System information:"
+            echo "OS: $(uname -s)"
+            echo "Arch: $(uname -m)"
+            echo "Install URL: ${{ env.OPENCODE_INSTALL_URL }}"
+            
+            # Install with better error handling
+            if ! curl -fsSL ${{ env.OPENCODE_INSTALL_URL }} | bash; then
+              echo "ERROR: OpenCode installation failed"
+              echo "Trying alternative installation method..."
+              
+              # Try installing specific version as fallback
+              if ! curl -fsSL ${{ env.OPENCODE_INSTALL_URL }} | bash -s -- --version 1.0.180; then
+                echo "ERROR: Alternative installation also failed"
+                exit 1
+              fi
+            fi
+            
             echo "OpenCode installation completed"
-            # Verify installation
-            env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode --version
+            
+            # Verify installation with better error reporting
+            if ! env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode --version; then
+              echo "ERROR: OpenCode installation verification failed"
+              echo "Checking installation directory:"
+              ls -la "$HOME/.opencode/bin/" || echo "Installation directory not found"
+              exit 1
+            fi
           fi
 
       - name: Run OpenCode ${{ inputs.run-name }}
