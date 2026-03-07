@@ -1,0 +1,113 @@
+name: Daily Schedule Automation
+
+on:
+  schedule:
+    # Run at 9 AM UTC every weekday (Monday-Friday)
+    - cron: '0 9 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      force_run:
+        description: 'Force run daily automation'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  daily-automation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get repository info
+        id: repo-info
+        run: |
+          echo "owner=${{ github.repository_owner }}" >> $GITHUB_OUTPUT
+          echo "repo=${{ github.event.repository.name }}" >> $GITHUB_OUTPUT
+          echo "full_name=${{ github.repository }}" >> $GITHUB_OUTPUT
+
+      - name: Get open issues count
+        id: issues
+        run: |
+          # Get count of open issues
+          issues_count=$(gh api repos/${{ github.repository }}/issues --jq 'length')
+          echo "count=${issues_count}" >> $GITHUB_OUTPUT
+          
+          # Get issues by state labels
+          open_count=$(gh api repos/${{ github.repository }}/issues --jq '[.[] | select(.labels[]?.name == "open")] | length')
+          ready_count=$(gh api repos/${{ github.repository }}/issues --jq '[.[] | select(.labels[]?.name == "ready")] | length')
+          in_progress_count=$(gh api repos/${{ github.repository }}/issues --jq '[.[] | select(.labels[]?.name == "in-progress")] | length')
+          reviewed_count=$(gh api repos/${{ github.repository }}/issues --jq '[.[] | select(.labels[]?.name == "reviewed")] | length')
+          
+          echo "open=${open_count}" >> $GITHUB_OUTPUT
+          echo "ready=${ready_count}" >> $GITHUB_OUTPUT
+          echo "in_progress=${in_progress_count}" >> $GITHUB_OUTPUT
+          echo "reviewed=${reviewed_count}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get open PRs count
+        id: prs
+        run: |
+          prs_count=$(gh api repos/${{ github.repository }}/pulls --jq 'length')
+          echo "count=${prs_count}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Call OpenCode automation for daily summary
+        uses: ./.github/workflows/opencode-run.yml
+        with:
+          run-name: "Daily Repository Summary - ${{ steps.repo-info.outputs.repo }}"
+          prompt: |
+            Daily automation summary for repository ${{ steps.repo-info.outputs.full_name }}:
+            
+            Repository Status:
+            - Owner: ${{ steps.repo-info.outputs.owner }}
+            - Total open issues: ${{ steps.issues.outputs.count }}
+            - Issues by state:
+              * Open: ${{ steps.issues.outputs.open }}
+              * Ready: ${{ steps.issues.outputs.ready }}
+              * In Progress: ${{ steps.issues.outputs.in_progress }}
+              * Reviewed: ${{ steps.issues.outputs.reviewed }}
+            - Open pull requests: ${{ steps.prs.outputs.count }}
+            
+            This is a daily scheduled check. Please provide a summary of repository activity and any recommendations for project management.
+          model: "claude-3-5-sonnet-20241022"
+          agent: "general"
+          timeout-minutes: 5
+
+      - name: Check for stale issues
+        id: stale-check
+        run: |
+          # Find issues not updated in 30 days
+          thirty_days_ago=$(date -d '30 days ago' -u +%Y-%m-%dT%H:%M:%SZ)
+          stale_issues=$(gh api repos/${{ github.repository }}/issues --jq --arg date "$thirty_days_ago" '[.[] | select(.updated_at < $date)] | length')
+          echo "stale_count=${stale_issues}" >> $GITHUB_OUTPUT
+          
+          if [ "$stale_issues" -gt 0 ]; then
+            echo "has_stale=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_stale=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Call OpenCode automation for stale issues
+        if: steps.stale-check.outputs.has_stale == 'true'
+        uses: ./.github/workflows/opencode-run.yml
+        with:
+          run-name: "Stale Issues Check - ${{ steps.repo-info.outputs.repo }}"
+          prompt: |
+            Stale issues detected in repository ${{ steps.repo-info.outputs.full_name }}:
+            
+            Found ${{ steps.stale-check.outputs.stale_count }} issues that haven't been updated in 30+ days.
+            
+            Please review these stale issues and provide recommendations for:
+            1. Which issues should be closed as outdated
+            2. Which issues need attention or follow-up
+            3. Any patterns in stale issues that suggest process improvements
+            
+            This is part of the daily maintenance automation.
+          model: "claude-3-5-sonnet-20241022"
+          agent: "general"
+          timeout-minutes: 5

@@ -1,0 +1,111 @@
+name: Pull Request Workflow Automation
+
+on:
+  pull_request:
+    types: [opened]
+  check_run:
+    types: [completed]
+  workflow_run:
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  contents: read
+  checks: read
+
+jobs:
+  handle-pr-events:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Determine PR event type
+        id: determine-event
+        run: |
+          EVENT_TYPE="${{ github.event_name }}"
+          ACTION="${{ github.event.action }}"
+          SHOULD_RUN_OPENCODE="false"
+          EVENT_DESCRIPTION=""
+          
+          echo "Event: $EVENT_TYPE, Action: $ACTION"
+          
+          if [ "$EVENT_TYPE" = "pull_request" ] && [ "$ACTION" = "opened" ]; then
+            echo "New pull request created"
+            SHOULD_RUN_OPENCODE="true"
+            EVENT_DESCRIPTION="pr-opened"
+          elif [ "$EVENT_TYPE" = "check_run" ] && [ "$ACTION" = "completed" ]; then
+            echo "Check run completed"
+            CHECK_STATUS="${{ github.event.check_run.conclusion }}"
+            if [ "$CHECK_STATUS" = "failure" ] || [ "$CHECK_STATUS" = "cancelled" ] || [ "$CHECK_STATUS" = "timed_out" ]; then
+              echo "Check failed with status: $CHECK_STATUS"
+              SHOULD_RUN_OPENCODE="true"
+              EVENT_DESCRIPTION="check-failed"
+            fi
+          elif [ "$EVENT_TYPE" = "workflow_run" ] && [ "$ACTION" = "completed" ]; then
+            echo "Workflow run completed"
+            WORKFLOW_STATUS="${{ github.event.workflow_run.conclusion }}"
+            if [ "$WORKFLOW_STATUS" = "failure" ] || [ "$WORKFLOW_STATUS" = "cancelled" ] || [ "$WORKFLOW_STATUS" = "timed_out" ]; then
+              echo "Workflow failed with status: $WORKFLOW_STATUS"
+              SHOULD_RUN_OPENCODE="true"
+              EVENT_DESCRIPTION="workflow-failed"
+            fi
+          fi
+          
+          echo "should_run_opencode=$SHOULD_RUN_OPENCODE" >> $GITHUB_OUTPUT
+          echo "event_description=$EVENT_DESCRIPTION" >> $GITHUB_OUTPUT
+
+      - name: Get PR information
+        if: steps.determine-event.outputs.should_run_opencode == 'true'
+        id: get-pr-info
+        run: |
+          PR_NUMBER=""
+          PR_TITLE=""
+          PR_AUTHOR=""
+          
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          elif [ "${{ github.event_name }}" = "check_run" ]; then
+            # Try to get PR info from check run
+            if [ -n "${{ github.event.check_run.pull_requests[0].number }}" ]; then
+              PR_NUMBER="${{ github.event.check_run.pull_requests[0].number }}"
+              PR_TITLE="${{ github.event.check_run.pull_requests[0].title }}"
+              PR_AUTHOR="${{ github.event.check_run.pull_requests[0].user.login }}"
+            fi
+          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
+            # Try to get PR info from workflow run
+            if [ -n "${{ github.event.workflow_run.pull_requests[0].number }}" ]; then
+              PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
+              PR_TITLE="${{ github.event.workflow_run.pull_requests[0].title }}"
+              PR_AUTHOR="${{ github.event.workflow_run.pull_requests[0].user.login }}"
+            fi
+          fi
+          
+          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT  
+          echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+
+      - name: Call OpenCode Run
+        if: steps.determine-event.outputs.should_run_opencode == 'true'
+        uses: ./.github/workflows/opencode-run.yml
+        with:
+          run-name: "pr-workflow-${{ steps.determine-event.outputs.event_description }}"
+          prompt: |
+            Pull Request Workflow Event Analysis
+            
+            Event Type: ${{ github.event_name }}
+            Action: ${{ github.event.action }}
+            Event Description: ${{ steps.determine-event.outputs.event_description }}
+            PR Number: #${{ steps.get-pr-info.outputs.pr_number }}
+            PR Title: "${{ steps.get-pr-info.outputs.pr_title }}"
+            PR Author: ${{ steps.get-pr-info.outputs.pr_author }}
+            Actor: ${{ github.actor }}
+            Repository: ${{ github.repository }}
+            
+            This is a dummy message for PR workflow automation testing.
+            Please acknowledge receipt of this pull request workflow event.
+          model: "opencode/big-pickle"
+          agent: "build"
+          timeout-minutes: 10
