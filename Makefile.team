@@ -1,0 +1,185 @@
+.PHONY: gen-opencode clean-agents clean-commands clean help
+
+# Default team file
+TEAM_FILE ?= teams/sw-dev-team.xml
+
+# Default target
+help:
+	@echo "Available targets:"
+	@echo "  gen-opencode [TEAM_FILE=path]  - Generate OpenCode agent & command definitions from team XML file"
+	@echo "                                   Default: $(TEAM_FILE)"
+	@echo "  clean-agents                   - Remove all generated agent files"
+	@echo "  clean-commands                 - Remove all generated command files"
+	@echo "  clean                         - Remove all generated files (agents + commands)"
+	@echo "  help                          - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make -f Makefile.team gen-opencode"
+	@echo "  make -f Makefile.team gen-opencode TEAM_FILE=teams/other-team.xml"
+
+# Generate OpenCode agent definitions and commands
+gen-opencode: .opencode/agents/ .opencode/commands/
+	@if [ ! -f "$(TEAM_FILE)" ]; then \
+		echo "Error: Team file $(TEAM_FILE) not found!"; \
+		echo "Please specify a valid team XML file with TEAM_FILE=path"; \
+		exit 1; \
+	fi
+	@echo "Generating OpenCode agent definitions and commands from $(TEAM_FILE)..."
+	@# Extract all agent IDs from the team file
+	@agent_ids=$$(grep '<agent id=' "$(TEAM_FILE)" | sed -n 's/.*id="\([^"]*\)".*/\1/p'); \
+	for agent_id in $$agent_ids; do \
+		echo "Processing agent: $$agent_id"; \
+		agent_name=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*name="\([^"]*\)".*/\1/p'); \
+		agent_title=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*title="\([^"]*\)".*/\1/p'); \
+		agent_icon=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*icon="\([^"]*\)".*/\1/p'); \
+		role=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*<role>\(.*\)<\/role>.*/\1/p'); \
+		identity=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*<identity>\(.*\)<\/identity>.*/\1/p'); \
+		comm_style=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*<communication_style>\(.*\)<\/communication_style>.*/\1/p'); \
+		principles=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*<principles>\(.*\)<\/principles>.*/\1/p'); \
+		\
+		filename=".opencode/agents/$$agent_id.md"; \
+		\
+		echo "---" > "$$filename"; \
+		echo "description: $$agent_name - $$role" >> "$$filename"; \
+		echo "mode: primary" >> "$$filename"; \
+		echo "---" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		echo "# $$agent_name $$agent_icon" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		echo "**Role:** $$role" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		echo "**Identity:** $$identity" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		echo "**Communication Style:** $$comm_style" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		echo "**Principles:** $$principles" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		echo "## Instructions" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		\
+		sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | \
+		sed -n '/<activation.*>/,/<\/activation>/p' | \
+		sed -n '/<instructions>/,/<\/instructions>/p' | \
+		sed 's/<instructions><!\[CDATA\[//' | \
+		sed 's/\]\]><\/instructions>//' | \
+		sed '/Initialize as .* with .* context:/d' | \
+		sed '/Initialize as .* with development environment setup:/d' | \
+		sed 's/\[PROJECT_NAME\]/current project/g' | \
+		sed 's/\[TEAM_SIZE\]/team/g' | \
+		sed 's/\[TECH_STACK\]/technology stack/g' >> "$$filename"; \
+		\
+		echo "" >> "$$filename"; \
+		echo "## Commands" >> "$$filename"; \
+		echo "" >> "$$filename"; \
+		\
+		sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | \
+		sed -n '/<commands>/,/<\/commands>/p' | \
+		awk 'BEGIN { in_command = 0; trigger = ""; desc = ""; } \
+		/<command>/ { in_command = 1; trigger = ""; desc = ""; } \
+		in_command && /<trigger>/ { \
+			gsub(/<\/?trigger>/, ""); \
+			gsub(/^[[:space:]]*|[[:space:]]*$$/, ""); \
+			trigger = $$0; \
+		} \
+		in_command && /<description>/ { \
+			gsub(/<\/?description>/, ""); \
+			gsub(/^[[:space:]]*|[[:space:]]*$$/, ""); \
+			desc = $$0; \
+		} \
+		/<\/command>/ { \
+			if (trigger != "" && desc != "") { \
+				print "### /" trigger ""; \
+				print ""; \
+				print "#### Description"; \
+				print ""; \
+				print desc; \
+				print ""; \
+				print "#### Instructions"; \
+				print ""; \
+				print "Follow instructions under [" trigger "](.opencode/commands/" trigger ".md)"; \
+				print ""; \
+			} \
+			in_command = 0; trigger = ""; desc = ""; \
+		}' >> "$$filename"; \
+		\
+		echo "Generated $$filename for $$agent_name"; \
+	done
+	@echo "Agent definitions generated successfully!"
+	@echo ""
+	@echo "Generating command definitions..."
+	@# Extract all commands from all agents
+	@agent_ids=$$(grep '<agent id=' "$(TEAM_FILE)" | sed -n 's/.*id="\([^"]*\)".*/\1/p'); \
+	for agent_id in $$agent_ids; do \
+		echo "Processing commands for agent: $$agent_id"; \
+		agent_name=$$(sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | sed -n 's/.*name="\([^"]*\)".*/\1/p'); \
+		\
+		sed -n "/<agent id=\"$$agent_id\"/,/<\/agent>/p" "$(TEAM_FILE)" | \
+		sed -n '/<commands>/,/<\/commands>/p' | \
+		awk -v agent_id="$$agent_id" 'BEGIN { in_command = 0; trigger = ""; desc = ""; instructions = ""; } \
+		/<command>/ { in_command = 1; trigger = ""; desc = ""; instructions = ""; } \
+		in_command && /<trigger>/ { \
+			gsub(/<\/?trigger>/, ""); \
+			gsub(/^[[:space:]]*|[[:space:]]*$$/, ""); \
+			trigger = $$0; \
+		} \
+		in_command && /<description>/ { \
+			gsub(/<\/?description>/, ""); \
+			gsub(/^[[:space:]]*|[[:space:]]*$$/, ""); \
+			desc = $$0; \
+		} \
+		in_command && /<instructions><!\[CDATA\[/ { \
+			in_instructions = 1; \
+			instructions = ""; \
+			next; \
+		} \
+		in_command && in_instructions && /\]\]><\/instructions>/ { \
+			in_instructions = 0; \
+			next; \
+		} \
+		in_command && in_instructions { \
+			if (instructions != "") instructions = instructions "\n"; \
+			instructions = instructions $$0; \
+		} \
+		/<\/command>/ { \
+			if (trigger != "" && desc != "") { \
+				filename = ".opencode/commands/" trigger ".md"; \
+				print "---" > filename; \
+				print "description: " desc > filename; \
+				print "agent: " agent_id > filename; \
+				print "---" > filename; \
+				print "" > filename; \
+				if (instructions != "") { \
+					print instructions > filename; \
+				} else { \
+					print desc > filename; \
+				} \
+				print "Generated command: " trigger " for agent: " agent_id; \
+			} \
+			in_command = 0; trigger = ""; desc = ""; instructions = ""; \
+		}'; \
+	done
+	@echo "OpenCode agent definitions and commands generated successfully!"
+
+# Create agents directory if it doesn't exist
+.opencode/agents/:
+	@mkdir -p .opencode/agents/
+
+# Create commands directory if it doesn't exist  
+.opencode/commands/:
+	@mkdir -p .opencode/commands/
+
+# Clean up generated agent files
+clean-agents:
+	@echo "Removing generated agent files..."
+	@find .opencode/agents/ -name "*.md" -not -name "review.md" -delete 2>/dev/null || true
+	@echo "Agent cleanup completed!"
+
+# Clean up generated command files  
+clean-commands:
+	@echo "Removing generated command files..."
+	@rm -f .opencode/commands/*.md 2>/dev/null || true
+	@echo "Command cleanup completed!"
+
+# Clean up all generated files
+clean: clean-agents clean-commands
+	@echo "All generated files cleaned up!"
