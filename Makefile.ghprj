@@ -1,45 +1,50 @@
-# Makefile.ghprj
-# GitHub Project WORKFLOW SETUP
+# =============================================================================
+# Makefile.ghprj - GitHub Project Workflow Setup
+# =============================================================================
+# 
+# DESCRIPTION:
+#   Ensures OSLC-aligned workflow task state labels and optional metadata 
+#   labels exist in the current GitHub repo with proper colors and descriptions.
 #
-# Ensures OSLC-aligned workflow task state labels
-# and optional metadata labels exist in the current GitHub repo.
-# Also supports priority labels (priority/high, priority/medium, priority/low),
-# severity labels (severity/critical, severity/major, severity/minor, severity/trivial),
-# confidence labels (confidence/high, confidence/medium, confidence/low),
-# and complexity labels (complexity/high, complexity/medium, complexity/low).
+# SUPPORTED LABEL SYSTEMS:
+#   • Workflow: open, ready, in-progress, reviewed, closed, released
+#   • Priority: high, medium, low (urgency-based)  
+#   • Severity: critical, high, medium, low (impact-based)
+#   • Confidence: high, medium, low (certainty-based)
+#   • Complexity: high, medium, low (effort-based)
 #
-# IMPORTANT:
-#   - "closed" = PR merged to main (code complete)
-#   - "released" = OPTIONAL metadata label (NOT a task state)
+# KEY CONCEPTS:
+#   • "closed" = PR merged to main (code complete)
+#   • "released" = OPTIONAL metadata label (NOT a task state)
+#   • All label types support custom namespaces (e.g., priority/, p/, custom/)
+#   • Color schemes follow logical patterns (red=urgent/complex, green=safe/simple)
 #
-# Requirements:
-#   - GitHub CLI (gh)
-#   - jq
-#   - python3
-#   - Authenticated: gh auth status
+# REQUIREMENTS:
+#   • GitHub CLI (gh) - authenticated with gh auth status
+#   • jq - JSON processor for API responses
+#   • python3 - URL encoding for label names
 #
-# Usage:
-#   Default (no workflow prefix, priority/, severity/, confidence/, and complexity/ namespaces):
+# USAGE EXAMPLES:
+#   Default setup with all label types:
 #     make -f Makefile.ghprj setup
+#
+#   Interactive setup (prompts for prefixes):
+#     make -f Makefile.ghprj setup INTERACTIVE=true
+#
+#   Dry run (preview changes without applying):
 #     make -f Makefile.ghprj setup-dry-run
 #
-#   Interactive (will prompt for prefix choices):
-#     make -f Makefile.ghprj setup INTERACTIVE=true
-#     make -f Makefile.ghprj setup-dry-run INTERACTIVE=true
+#   Custom prefixes:
+#     make -f Makefile.ghprj setup PRIORITY_PREFIX=p CONFIDENCE_PREFIX=conf
 #
-#   Non-interactive with specific prefixes:
-#     make -f Makefile.ghprj setup WORKFLOW_PREFIX=workflow PRIORITY_PREFIX=p SEVERITY_PREFIX=sev CONFIDENCE_PREFIX=conf COMPLEXITY_PREFIX=comp
-#     make -f Makefile.ghprj setup-dry-run WORKFLOW_PREFIX=state PRIORITY_PREFIX="" SEVERITY_PREFIX="" CONFIDENCE_PREFIX="" COMPLEXITY_PREFIX=""
+#   Disable specific label types:
+#     make -f Makefile.ghprj setup CONFIDENCE_PREFIX="" COMPLEXITY_PREFIX=""
 #
-#   Disable priority, severity, confidence, or complexity labels:
-#     make -f Makefile.ghprj setup PRIORITY_PREFIX=""
-#     make -f Makefile.ghprj setup SEVERITY_PREFIX=""
-#     make -f Makefile.ghprj setup CONFIDENCE_PREFIX=""
-#     make -f Makefile.ghprj setup COMPLEXITY_PREFIX=""
-#
-#   List current labels:
-#     make -f Makefile.ghprj setup-list
-#
+# =============================================================================
+
+# =============================================================================
+# CONFIGURATION SECTION
+# =============================================================================
 
 SHELL := /bin/bash
 .ONESHELL:
@@ -47,29 +52,43 @@ SHELL := /bin/bash
 
 REPO ?= $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
 
-# Optional namespace (e.g. WORKFLOW_PREFIX=state → state/open)
+# =============================================================================
+# NAMESPACE CONFIGURATION  
+# =============================================================================
+
+# Workflow labels namespace (e.g., WORKFLOW_PREFIX=state → state/open)
 WORKFLOW_PREFIX ?=
 
-# Optional priority namespace (e.g. PRIORITY_PREFIX=priority → priority/high)
-# Set to empty string to disable priority labels
-PRIORITY_PREFIX ?= priority
+# Metadata label namespaces - each can be configured independently
+PRIORITY_PREFIX ?= priority     # Priority urgency (priority/high, priority/medium, priority/low)
+SEVERITY_PREFIX ?= severity     # Impact severity (severity/critical, severity/high, etc.)
+CONFIDENCE_PREFIX ?= confidence # Certainty level (confidence/high, confidence/medium, confidence/low)  
+COMPLEXITY_PREFIX ?= complexity # Implementation effort (complexity/high, complexity/medium, complexity/low)
 
-# Optional severity namespace (e.g. SEVERITY_PREFIX=severity → severity/critical)
-# Set to empty string to disable severity labels
-SEVERITY_PREFIX ?= severity
+# =============================================================================
+# DATA-DRIVEN LABEL TYPE REGISTRY
+# =============================================================================
 
-# Optional confidence namespace (e.g. CONFIDENCE_PREFIX=confidence → confidence/high)
-# Set to empty string to disable confidence labels
-CONFIDENCE_PREFIX ?= confidence
+# Metadata label types supported by this system
+METADATA_LABEL_TYPES := priority severity confidence complexity
 
-# Optional complexity namespace (e.g. COMPLEXITY_PREFIX=complexity → complexity/high)
-# Set to empty string to disable complexity labels
-COMPLEXITY_PREFIX ?= complexity
+# Label levels for each type (defines the available options)
+PRIORITY_LEVELS := high medium low
+SEVERITY_LEVELS := critical high medium low  
+CONFIDENCE_LEVELS := high medium low
+COMPLEXITY_LEVELS := high medium low
+
+# Short prefix alternatives for interactive mode
+PRIORITY_SHORT := p
+SEVERITY_SHORT := sev
+CONFIDENCE_SHORT := conf
+COMPLEXITY_SHORT := comp
 
 # -------------------------
 # Colors (hex without '#')
 # -------------------------
 
+# Workflow label colors
 COLOR_OPEN        ?= C5DEF5
 COLOR_READY       ?= 0E8A16
 COLOR_INPROGRESS  ?= FBCA04
@@ -77,31 +96,64 @@ COLOR_REVIEWED    ?= 1D76DB
 COLOR_CLOSED      ?= D4C5F9
 COLOR_RELEASED    ?= 0052CC
 
-# Priority label colors
-COLOR_PRIORITY_HIGH   ?= D73A49
-COLOR_PRIORITY_MEDIUM ?= FB8500
-COLOR_PRIORITY_LOW    ?= 28A745
-
-# Severity label colors
-COLOR_SEVERITY_CRITICAL ?= B60205
-COLOR_SEVERITY_HIGH     ?= D93F0B
-COLOR_SEVERITY_MEDIUM   ?= FBCA04
-COLOR_SEVERITY_LOW      ?= 0E8A16
-
-# Confidence label colors
-COLOR_CONFIDENCE_HIGH   ?= 0E8A16
-COLOR_CONFIDENCE_MEDIUM ?= FBCA04
-COLOR_CONFIDENCE_LOW    ?= D73A49
-
-# Complexity label colors  
-COLOR_COMPLEXITY_HIGH   ?= D73A49
-COLOR_COMPLEXITY_MEDIUM ?= FBCA04
-COLOR_COMPLEXITY_LOW    ?= 0E8A16
-
 # -------------------------
-# Descriptions
+# Semantic Color Constants  
 # -------------------------
 
+# Base semantic colors (hex without '#')
+RED       := D73A49
+ORANGE    := FB8500  
+YELLOW    := FBCA04
+GREEN     := 0E8A16
+BLUE      := 1D76DB
+PURPLE    := D4C5F9
+LIGHT_BLUE := C5DEF5
+DARK_BLUE := 0052CC
+DARK_RED  := B60205
+DARK_ORANGE := D93F0B
+DARK_GREEN := 28A745
+
+# -------------------------
+# Workflow Label Colors
+# -------------------------
+
+COLOR_OPEN        ?= $(LIGHT_BLUE)  # Light blue - neutral, open state
+COLOR_READY       ?= $(GREEN)       # Green - ready to go  
+COLOR_INPROGRESS  ?= $(YELLOW)      # Yellow - work in progress
+COLOR_REVIEWED    ?= $(BLUE)        # Blue - reviewed and approved
+COLOR_CLOSED      ?= $(PURPLE)      # Purple - completed/closed
+COLOR_RELEASED    ?= $(DARK_BLUE)   # Dark blue - released to production
+
+# -------------------------  
+# Metadata Label Colors
+# -------------------------
+
+# Priority colors: Red (high urgency) → Orange → Green (low urgency)
+COLOR_PRIORITY_HIGH   ?= $(RED)
+COLOR_PRIORITY_MEDIUM ?= $(ORANGE)  
+COLOR_PRIORITY_LOW    ?= $(DARK_GREEN)
+
+# Severity colors: Dark Red (critical) → Red → Yellow → Green (low impact)
+COLOR_SEVERITY_CRITICAL ?= $(DARK_RED)
+COLOR_SEVERITY_HIGH     ?= $(DARK_ORANGE)
+COLOR_SEVERITY_MEDIUM   ?= $(YELLOW)
+COLOR_SEVERITY_LOW      ?= $(GREEN)
+
+# Confidence colors: Green (high confidence) → Yellow → Red (low confidence)  
+COLOR_CONFIDENCE_HIGH   ?= $(GREEN)
+COLOR_CONFIDENCE_MEDIUM ?= $(YELLOW)
+COLOR_CONFIDENCE_LOW    ?= $(RED)
+
+# Complexity colors: Red (high complexity) → Yellow → Green (low complexity)
+COLOR_COMPLEXITY_HIGH   ?= $(RED)
+COLOR_COMPLEXITY_MEDIUM ?= $(YELLOW)
+COLOR_COMPLEXITY_LOW    ?= $(GREEN)
+
+# =============================================================================
+# LABEL DESCRIPTIONS
+# =============================================================================
+
+# Workflow state descriptions (explain the purpose of each state)
 DESC_OPEN         ?= New or unrefined work. Collaborative grooming allowed.
 DESC_READY        ?= Definition of Ready met. Pullable backlog (PO gate).
 DESC_INPROGRESS   ?= Work pulled by team; implementation underway.
@@ -109,30 +161,30 @@ DESC_REVIEWED     ?= PR approved + CI green. Ready to merge to main.
 DESC_CLOSED       ?= PR merged to main. Code complete. Task lifecycle ends.
 DESC_RELEASED     ?= OPTIONAL metadata: included in a production release. NOT a task state.
 
-# Priority label descriptions
+# Priority descriptions (urgency-based - how soon work must be done)
 DESC_PRIORITY_HIGH    ?= Critical priority - urgent attention required
 DESC_PRIORITY_MEDIUM  ?= Normal priority - standard workflow
 DESC_PRIORITY_LOW     ?= Low priority - can be deferred if needed
 
-# Severity label descriptions
+# Severity descriptions (impact-based - consequences of the issue)
 DESC_SEVERITY_CRITICAL ?= Critical severity - system failure or data loss
 DESC_SEVERITY_HIGH     ?= High severity - significant impact on functionality  
 DESC_SEVERITY_MEDIUM   ?= Medium severity - limited impact or workaround exists
 DESC_SEVERITY_LOW      ?= Low severity - cosmetic or documentation issues
 
-# Confidence label descriptions
+# Confidence descriptions (certainty-based - how well understood the work is)
 DESC_CONFIDENCE_HIGH   ?= High confidence - well understood, low risk of issues
 DESC_CONFIDENCE_MEDIUM ?= Medium confidence - some uncertainty, moderate risk
 DESC_CONFIDENCE_LOW    ?= Low confidence - high uncertainty, significant unknowns
 
-# Complexity label descriptions
+# Complexity descriptions (effort-based - how difficult implementation will be)
 DESC_COMPLEXITY_HIGH   ?= High complexity - intricate solution, multiple dependencies
 DESC_COMPLEXITY_MEDIUM ?= Medium complexity - moderate effort and dependencies
 DESC_COMPLEXITY_LOW    ?= Low complexity - straightforward implementation
 
-# -------------------------
-# Internal Guards
-# -------------------------
+# =============================================================================
+# VALIDATION AND GUARD FUNCTIONS
+# =============================================================================
 
 define REQUIRE_TOOLS
 command -v gh >/dev/null 2>&1 || { echo "ERROR: gh not found"; exit 1; }
@@ -144,6 +196,10 @@ endef
 define REQUIRE_REPO
 [ -n "$(REPO)" ] || { echo "ERROR: Could not resolve repo. Set REPO=owner/name"; exit 1; }
 endef
+
+# =============================================================================
+# INTERACTIVE CONFIGURATION FUNCTIONS
+# =============================================================================
 
 define ASK_PREFIX
 if [ -z "$(WORKFLOW_PREFIX)" ] && [ "$(INTERACTIVE)" = "true" ]; then \
@@ -168,6 +224,20 @@ else \
 fi
 endef
 
+# Unified interactive prefix selection pattern
+# Eliminates duplication in ASK_* functions while maintaining readability
+define INTERACTIVE_PREFIX_CHOICE
+echo -n "Choice [1]: "; \
+read choice; \
+case "$$choice" in \
+  ""|1) PREFIX_VAR="$(1)" ;; \
+  2) PREFIX_VAR="$(2)" ;; \
+  3) PREFIX_VAR="" ;; \
+  4) echo -n "Enter custom $(3) prefix: "; read PREFIX_VAR ;; \
+  *) echo "Invalid choice, using default"; PREFIX_VAR="$(1)" ;; \
+esac
+endef
+
 define ASK_PRIORITY_PREFIX
 if [ "$(INTERACTIVE)" = "true" ]; then \
   echo "Choose priority label prefix:"; \
@@ -175,15 +245,8 @@ if [ "$(INTERACTIVE)" = "true" ]; then \
   echo "  2) p/ - Labels: p/high, p/medium, p/low"; \
   echo "  3) No priority labels"; \
   echo "  4) Custom prefix"; \
-  echo -n "Choice [1]: "; \
-  read choice; \
-  case "$$choice" in \
-    ""|1) PRIORITY_PREFIX="priority" ;; \
-    2) PRIORITY_PREFIX="p" ;; \
-    3) PRIORITY_PREFIX="" ;; \
-    4) echo -n "Enter custom priority prefix: "; read PRIORITY_PREFIX ;; \
-    *) echo "Invalid choice, using default"; PRIORITY_PREFIX="priority" ;; \
-  esac; \
+  $(call INTERACTIVE_PREFIX_CHOICE,priority,p,priority); \
+  PRIORITY_PREFIX="$$PREFIX_VAR"; \
 else \
   PRIORITY_PREFIX="$(PRIORITY_PREFIX)"; \
 fi
@@ -196,15 +259,8 @@ if [ "$(INTERACTIVE)" = "true" ]; then \
   echo "  2) sev/ - Labels: sev/critical, sev/high, sev/medium, sev/low"; \
   echo "  3) No severity labels"; \
   echo "  4) Custom prefix"; \
-  echo -n "Choice [1]: "; \
-  read choice; \
-  case "$$choice" in \
-    ""|1) SEVERITY_PREFIX="severity" ;; \
-    2) SEVERITY_PREFIX="sev" ;; \
-    3) SEVERITY_PREFIX="" ;; \
-    4) echo -n "Enter custom severity prefix: "; read SEVERITY_PREFIX ;; \
-    *) echo "Invalid choice, using default"; SEVERITY_PREFIX="severity" ;; \
-  esac; \
+  $(call INTERACTIVE_PREFIX_CHOICE,severity,sev,severity); \
+  SEVERITY_PREFIX="$$PREFIX_VAR"; \
 else \
   SEVERITY_PREFIX="$(SEVERITY_PREFIX)"; \
 fi
@@ -217,15 +273,8 @@ if [ "$(INTERACTIVE)" = "true" ]; then \
   echo "  2) conf/ - Labels: conf/high, conf/medium, conf/low"; \
   echo "  3) No confidence labels"; \
   echo "  4) Custom prefix"; \
-  echo -n "Choice [1]: "; \
-  read choice; \
-  case "$$choice" in \
-    ""|1) CONFIDENCE_PREFIX="confidence" ;; \
-    2) CONFIDENCE_PREFIX="conf" ;; \
-    3) CONFIDENCE_PREFIX="" ;; \
-    4) echo -n "Enter custom confidence prefix: "; read CONFIDENCE_PREFIX ;; \
-    *) echo "Invalid choice, using default"; CONFIDENCE_PREFIX="confidence" ;; \
-  esac; \
+  $(call INTERACTIVE_PREFIX_CHOICE,confidence,conf,confidence); \
+  CONFIDENCE_PREFIX="$$PREFIX_VAR"; \
 else \
   CONFIDENCE_PREFIX="$(CONFIDENCE_PREFIX)"; \
 fi
@@ -238,17 +287,76 @@ if [ "$(INTERACTIVE)" = "true" ]; then \
   echo "  2) comp/ - Labels: comp/high, comp/medium, comp/low"; \
   echo "  3) No complexity labels"; \
   echo "  4) Custom prefix"; \
-  echo -n "Choice [1]: "; \
-  read choice; \
-  case "$$choice" in \
-    ""|1) COMPLEXITY_PREFIX="complexity" ;; \
-    2) COMPLEXITY_PREFIX="comp" ;; \
-    3) COMPLEXITY_PREFIX="" ;; \
-    4) echo -n "Enter custom complexity prefix: "; read COMPLEXITY_PREFIX ;; \
-    *) echo "Invalid choice, using default"; COMPLEXITY_PREFIX="complexity" ;; \
-  esac; \
+  $(call INTERACTIVE_PREFIX_CHOICE,complexity,comp,complexity); \
+  COMPLEXITY_PREFIX="$$PREFIX_VAR"; \
 else \
   COMPLEXITY_PREFIX="$(COMPLEXITY_PREFIX)"; \
+fi
+endef
+
+# -------------------------
+# Data-Driven Label Processing Functions  
+# -------------------------
+
+# Generic temp file generation for all metadata label types
+define GENERATE_ALL_METADATA_LABELS
+if [ -n "$$PRIORITY_PREFIX" ]; then \
+  echo "priority:high|$(COLOR_PRIORITY_HIGH)|$(DESC_PRIORITY_HIGH)" >> /tmp/workflow_specs.txt; \
+  echo "priority:medium|$(COLOR_PRIORITY_MEDIUM)|$(DESC_PRIORITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
+  echo "priority:low|$(COLOR_PRIORITY_LOW)|$(DESC_PRIORITY_LOW)" >> /tmp/workflow_specs.txt; \
+fi; \
+if [ -n "$$SEVERITY_PREFIX" ]; then \
+  echo "severity:critical|$(COLOR_SEVERITY_CRITICAL)|$(DESC_SEVERITY_CRITICAL)" >> /tmp/workflow_specs.txt; \
+  echo "severity:high|$(COLOR_SEVERITY_HIGH)|$(DESC_SEVERITY_HIGH)" >> /tmp/workflow_specs.txt; \
+  echo "severity:medium|$(COLOR_SEVERITY_MEDIUM)|$(DESC_SEVERITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
+  echo "severity:low|$(COLOR_SEVERITY_LOW)|$(DESC_SEVERITY_LOW)" >> /tmp/workflow_specs.txt; \
+fi; \
+if [ -n "$$CONFIDENCE_PREFIX" ]; then \
+  echo "confidence:high|$(COLOR_CONFIDENCE_HIGH)|$(DESC_CONFIDENCE_HIGH)" >> /tmp/workflow_specs.txt; \
+  echo "confidence:medium|$(COLOR_CONFIDENCE_MEDIUM)|$(DESC_CONFIDENCE_MEDIUM)" >> /tmp/workflow_specs.txt; \
+  echo "confidence:low|$(COLOR_CONFIDENCE_LOW)|$(DESC_CONFIDENCE_LOW)" >> /tmp/workflow_specs.txt; \
+fi; \
+if [ -n "$$COMPLEXITY_PREFIX" ]; then \
+  echo "complexity:high|$(COLOR_COMPLEXITY_HIGH)|$(DESC_COMPLEXITY_HIGH)" >> /tmp/workflow_specs.txt; \
+  echo "complexity:medium|$(COLOR_COMPLEXITY_MEDIUM)|$(DESC_COMPLEXITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
+  echo "complexity:low|$(COLOR_COMPLEXITY_LOW)|$(DESC_COMPLEXITY_LOW)" >> /tmp/workflow_specs.txt; \
+fi
+endef
+
+# Generic label prefix processing for all metadata types  
+define PROCESS_ALL_METADATA_PREFIXES
+if echo "$$name" | grep -q "^priority:"; then \
+  name="$${name#priority:}"; \
+  if [ -n "$$PRIORITY_PREFIX" ]; then \
+    name="$$PRIORITY_PREFIX/$$name"; \
+  else \
+    continue; \
+  fi; \
+elif echo "$$name" | grep -q "^severity:"; then \
+  name="$${name#severity:}"; \
+  if [ -n "$$SEVERITY_PREFIX" ]; then \
+    name="$$SEVERITY_PREFIX/$$name"; \
+  else \
+    continue; \
+  fi; \
+elif echo "$$name" | grep -q "^confidence:"; then \
+  name="$${name#confidence:}"; \
+  if [ -n "$$CONFIDENCE_PREFIX" ]; then \
+    name="$$CONFIDENCE_PREFIX/$$name"; \
+  else \
+    continue; \
+  fi; \
+elif echo "$$name" | grep -q "^complexity:"; then \
+  name="$${name#complexity:}"; \
+  if [ -n "$$COMPLEXITY_PREFIX" ]; then \
+    name="$$COMPLEXITY_PREFIX/$$name"; \
+  else \
+    continue; \
+  fi; \
+else \
+  if [ -n "$$PREFIX" ]; then \
+    name="$$PREFIX/$$name"; \
+  fi; \
 fi
 endef
 
@@ -309,186 +417,72 @@ setup-list:
 # Apply Setup (Idempotent)
 # -------------------------
 
-_setup:
-	@$(REQUIRE_TOOLS)
-	@$(REQUIRE_REPO)
-	@$(ASK_PREFIX)
-	@$(ASK_PRIORITY_PREFIX)
-	@$(ASK_SEVERITY_PREFIX)
-	@$(ASK_CONFIDENCE_PREFIX)
-	@$(ASK_COMPLEXITY_PREFIX)
-	@echo "Applying workflow setup to repo: $(REPO)"
-	@if [ -n "$$PREFIX" ]; then echo "Using workflow prefix: $$PREFIX/"; else echo "Using no workflow prefix"; fi
-	@if [ -n "$$PRIORITY_PREFIX" ]; then echo "Using priority prefix: $$PRIORITY_PREFIX/"; else echo "No priority labels"; fi
-	@if [ -n "$$SEVERITY_PREFIX" ]; then echo "Using severity prefix: $$SEVERITY_PREFIX/"; else echo "No severity labels"; fi
-	@if [ -n "$$CONFIDENCE_PREFIX" ]; then echo "Using confidence prefix: $$CONFIDENCE_PREFIX/"; else echo "No confidence labels"; fi
-	@if [ -n "$$COMPLEXITY_PREFIX" ]; then echo "Using complexity prefix: $$COMPLEXITY_PREFIX/"; else echo "No complexity labels"; fi
-	@echo "open|$(COLOR_OPEN)|$(DESC_OPEN)" > /tmp/workflow_specs.txt; \
-	echo "ready|$(COLOR_READY)|$(DESC_READY)" >> /tmp/workflow_specs.txt; \
-	echo "in-progress|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS)" >> /tmp/workflow_specs.txt; \
-	echo "reviewed|$(COLOR_REVIEWED)|$(DESC_REVIEWED)" >> /tmp/workflow_specs.txt; \
-	echo "closed|$(COLOR_CLOSED)|$(DESC_CLOSED)" >> /tmp/workflow_specs.txt; \
-	echo "released|$(COLOR_RELEASED)|$(DESC_RELEASED)" >> /tmp/workflow_specs.txt; \
-	if [ -n "$$PRIORITY_PREFIX" ]; then \
-	  echo "priority:high|$(COLOR_PRIORITY_HIGH)|$(DESC_PRIORITY_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "priority:medium|$(COLOR_PRIORITY_MEDIUM)|$(DESC_PRIORITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "priority:low|$(COLOR_PRIORITY_LOW)|$(DESC_PRIORITY_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	if [ -n "$$SEVERITY_PREFIX" ]; then \
-	  echo "severity:critical|$(COLOR_SEVERITY_CRITICAL)|$(DESC_SEVERITY_CRITICAL)" >> /tmp/workflow_specs.txt; \
-	  echo "severity:high|$(COLOR_SEVERITY_HIGH)|$(DESC_SEVERITY_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "severity:medium|$(COLOR_SEVERITY_MEDIUM)|$(DESC_SEVERITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "severity:low|$(COLOR_SEVERITY_LOW)|$(DESC_SEVERITY_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	if [ -n "$$CONFIDENCE_PREFIX" ]; then \
-	  echo "confidence:high|$(COLOR_CONFIDENCE_HIGH)|$(DESC_CONFIDENCE_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "confidence:medium|$(COLOR_CONFIDENCE_MEDIUM)|$(DESC_CONFIDENCE_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "confidence:low|$(COLOR_CONFIDENCE_LOW)|$(DESC_CONFIDENCE_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	if [ -n "$$COMPLEXITY_PREFIX" ]; then \
-	  echo "complexity:high|$(COLOR_COMPLEXITY_HIGH)|$(DESC_COMPLEXITY_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "complexity:medium|$(COLOR_COMPLEXITY_MEDIUM)|$(DESC_COMPLEXITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "complexity:low|$(COLOR_COMPLEXITY_LOW)|$(DESC_COMPLEXITY_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	while IFS='|' read -r name color desc; do \
-	  if echo "$$name" | grep -q "^priority:"; then \
-	    name="$${name#priority:}"; \
-	    if [ -n "$$PRIORITY_PREFIX" ]; then \
-	      name="$$PRIORITY_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  elif echo "$$name" | grep -q "^severity:"; then \
-	    name="$${name#severity:}"; \
-	    if [ -n "$$SEVERITY_PREFIX" ]; then \
-	      name="$$SEVERITY_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  elif echo "$$name" | grep -q "^confidence:"; then \
-	    name="$${name#confidence:}"; \
-	    if [ -n "$$CONFIDENCE_PREFIX" ]; then \
-	      name="$$CONFIDENCE_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  elif echo "$$name" | grep -q "^complexity:"; then \
-	    name="$${name#complexity:}"; \
-	    if [ -n "$$COMPLEXITY_PREFIX" ]; then \
-	      name="$$COMPLEXITY_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  else \
-	    if [ -n "$$PREFIX" ]; then \
-	      name="$$PREFIX/$$name"; \
-	    fi; \
-	  fi; \
-	  encoded="$$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1], safe=""))' "$$name")"; \
-	  if gh api "repos/$(REPO)/labels/$$encoded" >/dev/null 2>&1; then \
-	    echo "UPDATE  $$name"; \
-	    gh api -X PATCH "repos/$(REPO)/labels/$$encoded" \
-	      -f new_name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
-	  else \
-	    echo "CREATE  $$name"; \
-	    gh api -X POST "repos/$(REPO)/labels" \
-	      -f name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
-	  fi; \
-	done < /tmp/workflow_specs.txt; \
-	rm -f /tmp/workflow_specs.txt
-	@echo "Workflow, priority, severity, confidence, and complexity setup complete."
+# Common setup logic for both actual and dry-run modes
+# Usage: $(call COMMON_SETUP_LOGIC,mode) where mode is "apply" or "dry-run"
+define COMMON_SETUP_LOGIC
+@$(REQUIRE_TOOLS)
+@$(REQUIRE_REPO)
+@$(ASK_PREFIX)
+@$(ASK_PRIORITY_PREFIX)
+@$(ASK_SEVERITY_PREFIX)
+@$(ASK_CONFIDENCE_PREFIX)
+@$(ASK_COMPLEXITY_PREFIX)
+@if [ "$(1)" = "dry-run" ]; then \
+  echo "Dry-run workflow setup for repo: $(REPO)"; \
+else \
+  echo "Applying workflow setup to repo: $(REPO)"; \
+fi
+@if [ -n "$$PREFIX" ]; then echo "Using workflow prefix: $$PREFIX/"; else echo "Using no workflow prefix"; fi
+@if [ -n "$$PRIORITY_PREFIX" ]; then echo "Using priority prefix: $$PRIORITY_PREFIX/"; else echo "No priority labels"; fi
+@if [ -n "$$SEVERITY_PREFIX" ]; then echo "Using severity prefix: $$SEVERITY_PREFIX/"; else echo "No severity labels"; fi
+@if [ -n "$$CONFIDENCE_PREFIX" ]; then echo "Using confidence prefix: $$CONFIDENCE_PREFIX/"; else echo "No confidence labels"; fi
+@if [ -n "$$COMPLEXITY_PREFIX" ]; then echo "Using complexity prefix: $$COMPLEXITY_PREFIX/"; else echo "No complexity labels"; fi
+@if [ "$(1)" = "dry-run" ]; then \
+  existing="$$(gh api "repos/$(REPO)/labels?per_page=100" --paginate | jq -r '.[] | [.name,.color,(.description // "")] | @tsv')"; \
+fi; \
+echo "open|$(COLOR_OPEN)|$(DESC_OPEN)" > /tmp/workflow_specs.txt; \
+echo "ready|$(COLOR_READY)|$(DESC_READY)" >> /tmp/workflow_specs.txt; \
+echo "in-progress|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS)" >> /tmp/workflow_specs.txt; \
+echo "reviewed|$(COLOR_REVIEWED)|$(DESC_REVIEWED)" >> /tmp/workflow_specs.txt; \
+echo "closed|$(COLOR_CLOSED)|$(DESC_CLOSED)" >> /tmp/workflow_specs.txt; \
+echo "released|$(COLOR_RELEASED)|$(DESC_RELEASED)" >> /tmp/workflow_specs.txt; \
+$(GENERATE_ALL_METADATA_LABELS); \
+while IFS='|' read -r name color desc; do \
+  $(PROCESS_ALL_METADATA_PREFIXES); \
+  if [ "$(1)" = "dry-run" ]; then \
+    match="$$(printf "%s\n" "$$existing" | awk -F'\t' -v n="$$name" '{print $$0}')" || true; \
+    if [ -z "$$match" ]; then \
+      echo "WOULD CREATE  $$name"; \
+    else \
+      cur_color="$$(printf "%s" "$$match" | awk -F'\t' '{print $$2}')" ; \
+      cur_desc="$$(printf "%s" "$$match" | awk -F'\t' '{print $$3}')" ; \
+      if [ "$$cur_color" != "$$color" ] || [ "$$cur_desc" != "$$desc" ]; then \
+        echo "WOULD UPDATE  $$name"; \
+      else \
+        echo "OK           $$name"; \
+      fi; \
+    fi; \
+  else \
+    encoded="$$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1], safe=""))' "$$name")"; \
+    if gh api "repos/$(REPO)/labels/$$encoded" >/dev/null 2>&1; then \
+      echo "UPDATE  $$name"; \
+      gh api -X PATCH "repos/$(REPO)/labels/$$encoded" \
+        -f new_name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
+    else \
+      echo "CREATE  $$name"; \
+      gh api -X POST "repos/$(REPO)/labels" \
+        -f name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
+    fi; \
+  fi; \
+done < /tmp/workflow_specs.txt; \
+rm -f /tmp/workflow_specs.txt
+@if [ "$(1)" = "apply" ]; then \
+  echo "Workflow, priority, severity, confidence, and complexity setup complete."; \
+fi
+endef
 
-# -------------------------
-# Dry Run
-# -------------------------
+_setup:
+	$(call COMMON_SETUP_LOGIC,apply)
 
 _setup_dry_run:
-	@$(REQUIRE_TOOLS)
-	@$(REQUIRE_REPO)
-	@$(ASK_PREFIX)
-	@$(ASK_PRIORITY_PREFIX)
-	@$(ASK_SEVERITY_PREFIX)
-	@$(ASK_CONFIDENCE_PREFIX)
-	@$(ASK_COMPLEXITY_PREFIX)
-	@echo "Dry-run workflow setup for repo: $(REPO)"
-	@if [ -n "$$PREFIX" ]; then echo "Using workflow prefix: $$PREFIX/"; else echo "Using no workflow prefix"; fi
-	@if [ -n "$$PRIORITY_PREFIX" ]; then echo "Using priority prefix: $$PRIORITY_PREFIX/"; else echo "No priority labels"; fi
-	@if [ -n "$$SEVERITY_PREFIX" ]; then echo "Using severity prefix: $$SEVERITY_PREFIX/"; else echo "No severity labels"; fi
-	@if [ -n "$$CONFIDENCE_PREFIX" ]; then echo "Using confidence prefix: $$CONFIDENCE_PREFIX/"; else echo "No confidence labels"; fi
-	@if [ -n "$$COMPLEXITY_PREFIX" ]; then echo "Using complexity prefix: $$COMPLEXITY_PREFIX/"; else echo "No complexity labels"; fi
-	@existing="$$(gh api "repos/$(REPO)/labels?per_page=100" --paginate | jq -r '.[] | [.name,.color,(.description // "")] | @tsv')"; \
-	echo "open|$(COLOR_OPEN)|$(DESC_OPEN)" > /tmp/workflow_specs.txt; \
-	echo "ready|$(COLOR_READY)|$(DESC_READY)" >> /tmp/workflow_specs.txt; \
-	echo "in-progress|$(COLOR_INPROGRESS)|$(DESC_INPROGRESS)" >> /tmp/workflow_specs.txt; \
-	echo "reviewed|$(COLOR_REVIEWED)|$(DESC_REVIEWED)" >> /tmp/workflow_specs.txt; \
-	echo "closed|$(COLOR_CLOSED)|$(DESC_CLOSED)" >> /tmp/workflow_specs.txt; \
-	echo "released|$(COLOR_RELEASED)|$(DESC_RELEASED)" >> /tmp/workflow_specs.txt; \
-	if [ -n "$$PRIORITY_PREFIX" ]; then \
-	  echo "priority:high|$(COLOR_PRIORITY_HIGH)|$(DESC_PRIORITY_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "priority:medium|$(COLOR_PRIORITY_MEDIUM)|$(DESC_PRIORITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "priority:low|$(COLOR_PRIORITY_LOW)|$(DESC_PRIORITY_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	if [ -n "$$SEVERITY_PREFIX" ]; then \
-	  echo "severity:critical|$(COLOR_SEVERITY_CRITICAL)|$(DESC_SEVERITY_CRITICAL)" >> /tmp/workflow_specs.txt; \
-	  echo "severity:high|$(COLOR_SEVERITY_HIGH)|$(DESC_SEVERITY_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "severity:medium|$(COLOR_SEVERITY_MEDIUM)|$(DESC_SEVERITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "severity:low|$(COLOR_SEVERITY_LOW)|$(DESC_SEVERITY_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	if [ -n "$$CONFIDENCE_PREFIX" ]; then \
-	  echo "confidence:high|$(COLOR_CONFIDENCE_HIGH)|$(DESC_CONFIDENCE_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "confidence:medium|$(COLOR_CONFIDENCE_MEDIUM)|$(DESC_CONFIDENCE_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "confidence:low|$(COLOR_CONFIDENCE_LOW)|$(DESC_CONFIDENCE_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	if [ -n "$$COMPLEXITY_PREFIX" ]; then \
-	  echo "complexity:high|$(COLOR_COMPLEXITY_HIGH)|$(DESC_COMPLEXITY_HIGH)" >> /tmp/workflow_specs.txt; \
-	  echo "complexity:medium|$(COLOR_COMPLEXITY_MEDIUM)|$(DESC_COMPLEXITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
-	  echo "complexity:low|$(COLOR_COMPLEXITY_LOW)|$(DESC_COMPLEXITY_LOW)" >> /tmp/workflow_specs.txt; \
-	fi; \
-	while IFS='|' read -r name color desc; do \
-	  if echo "$$name" | grep -q "^priority:"; then \
-	    name="$${name#priority:}"; \
-	    if [ -n "$$PRIORITY_PREFIX" ]; then \
-	      name="$$PRIORITY_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  elif echo "$$name" | grep -q "^severity:"; then \
-	    name="$${name#severity:}"; \
-	    if [ -n "$$SEVERITY_PREFIX" ]; then \
-	      name="$$SEVERITY_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  elif echo "$$name" | grep -q "^confidence:"; then \
-	    name="$${name#confidence:}"; \
-	    if [ -n "$$CONFIDENCE_PREFIX" ]; then \
-	      name="$$CONFIDENCE_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  elif echo "$$name" | grep -q "^complexity:"; then \
-	    name="$${name#complexity:}"; \
-	    if [ -n "$$COMPLEXITY_PREFIX" ]; then \
-	      name="$$COMPLEXITY_PREFIX/$$name"; \
-	    else \
-	      continue; \
-	    fi; \
-	  else \
-	    if [ -n "$$PREFIX" ]; then \
-	      name="$$PREFIX/$$name"; \
-	    fi; \
-	  fi; \
-	  match="$$(printf "%s\n" "$$existing" | awk -F'\t' -v n="$$name" '$$1==n{print $$0}')" || true; \
-	  if [ -z "$$match" ]; then \
-	    echo "WOULD CREATE  $$name"; \
-	  else \
-	    cur_color="$$(printf "%s" "$$match" | awk -F'\t' '{print $$2}')" ; \
-	    cur_desc="$$(printf "%s" "$$match" | awk -F'\t' '{print $$3}')" ; \
-	    if [ "$$cur_color" != "$$color" ] || [ "$$cur_desc" != "$$desc" ]; then \
-	      echo "WOULD UPDATE  $$name"; \
-	    else \
-	      echo "OK           $$name"; \
-	    fi; \
-	  fi; \
-	done < /tmp/workflow_specs.txt; \
-	rm -f /tmp/workflow_specs.txt
+	$(call COMMON_SETUP_LOGIC,dry-run)
