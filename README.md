@@ -102,6 +102,18 @@ curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo ba
 act --version
 ```
 
+### Option 3: One-liner Quick Test
+```bash
+# Quick test without cloning - runs ghaw directly from GitHub
+tmp=$(mktemp -d) && git clone --depth=1 https://github.com/tbrandenburg/ghaw.git "$tmp" >/dev/null && make -f "$tmp/Makefile.ghprj"
+
+# For team workflows
+tmp=$(mktemp -d) && git clone --depth=1 https://github.com/tbrandenburg/ghaw.git "$tmp" >/dev/null && make -f "$tmp/Makefile.team"
+
+# For standard workflows  
+tmp=$(mktemp -d) && git clone --depth=1 https://github.com/tbrandenburg/ghaw.git "$tmp" >/dev/null && make -f "$tmp/Makefile"
+```
+
 ## 🎮 Usage
 
 ### Basic Commands
