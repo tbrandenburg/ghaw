@@ -14,7 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.gha
 
 The installer automatically downloads and configures:
 
-- **Daily Routine Workflow** (`.github/workflows/routines/daily-routine.yml`)
+- **Daily Routine Workflow** (`.github/workflows/ghar-daily-routine.yml`)
   - Runs daily at 9:00 AM UTC
   - Can be triggered manually via GitHub Actions
   
@@ -22,7 +22,7 @@ The installer automatically downloads and configures:
   - Required dependency for running OpenCode commands
   - Only downloaded if not already present
 
-- **Stale Check Command** (`.opencode/commands/stale-check.md`)
+- **Stale Check Command** (`.opencode/commands/ghar-stale-check.md`)
   - Automatically configured with your repository owner
   - Checks for PRs inactive >14 days and issues >30 days
 
@@ -81,13 +81,13 @@ curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.gha
    - Click "Run workflow" to test manually
 
 3. **Customize if needed:**
-   - Edit `.github/workflows/routines/daily-routine.yml` to change the schedule
-   - Modify `.opencode/commands/stale-check.md` to adjust thresholds
+   - Edit `.github/workflows/ghar-daily-routine.yml` to change the schedule
+   - Modify `.opencode/commands/ghar-stale-check.md` to adjust thresholds
 
 ## 🔧 Customization
 
 ### Change Schedule
-Edit the cron expression in `routines/daily-routine.yml`:
+Edit the cron expression in `ghar-daily-routine.yml`:
 ```yaml
 schedule:
   - cron: '0 12 * * *'  # Daily at noon UTC
@@ -95,7 +95,7 @@ schedule:
 ```
 
 ### Adjust Thresholds
-Modify the days in `stale-check.md`:
+Modify the days in `ghar-stale-check.md`:
 - Change "14 days" for PR threshold
 - Change "30 days" for issue threshold
 

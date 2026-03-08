@@ -1,4 +1,4 @@
-name: Routines - Daily Routine - Stale Check
+name: GHAR - Daily Routine - Stale Check
 
 on:
   schedule:
@@ -12,7 +12,7 @@ jobs:
     uses: ./.github/workflows/opencode-run.yml
     with:
       run-name: stale-check
-      prompt-file: .opencode/commands/stale-check.md
+      prompt-file: .opencode/commands/ghar-stale-check.md
       timeout-minutes: 30
       model: "opencode/big-pickle"
     permissions:

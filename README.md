@@ -1,380 +1,421 @@
 # GHAW - GitHub Actions Workflow
 
-**GitHub Actions Workflow** - A streamlined project for testing and running GitHub Actions workflows locally using `act`.
+**GitHub Actions Workflow** - A comprehensive toolkit for GitHub repository automation, workflow management, and AI-powered code reviews.
 
-## 🚀 Quick Start
-
+🚀 **Quick Install GHAR (GitHub Auto-Routine)** - Add automated stale PR/issue checking to any repository:
 ```bash
-# Install dependencies and setup project
-make setup
-
-# List available workflows
-make list
-
-# Run all workflows locally
-make run-all
-
-# Run specific workflows
-make run-hello                    # Simple hello world
-make run-opencode-simple         # Basic OpenCode test
-make run-opencode-enhanced       # Enhanced OpenCode with security review
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install
 ```
 
 ## 📋 Table of Contents
 
 - [Overview](#overview)
-- [Prerequisites](#prerequisites)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Available Workflows](#available-workflows)
-- [Makefile Commands](#makefile-commands)
-- [Configuration](#configuration)
-- [Development](#development)
-- [Troubleshooting](#troubleshooting)
+- [🔧 Makefiles](#makefiles)
+- [🚀 Quick Start](#quick-start)
+- [📄 Available Workflows](#available-workflows)
+- [🛠 Installation & Setup](#installation--setup)
+- [📊 Project Setup](#project-setup)
+- [⭐ Features](#features)
+- [📁 Repository Structure](#repository-structure)
+- [🤝 Contributing](#contributing)
 
 ## 🎯 Overview
 
-This project demonstrates how to:
-- Create and test GitHub Actions workflows locally using `act`
-- Run OpenCode AI workflows for automated code reviews
-- Perform security and safety reviews with AI assistance
-- Use a simplified Makefile for common workflow operations
-- Validate workflow configurations before deploying
+GHAW provides multiple specialized Makefiles for different GitHub repository management tasks:
 
-## 📄 Available Workflows
+- **🔄 Workflow Testing** (`Makefile`) - Test GitHub Actions locally with `act`
+- **🤖 Auto-Routine** (`Makefile.ghar`) - Install automated stale PR/issue management
+- **🏷️ Project Labels** (`Makefile.ghprj`) - Setup OSLC-aligned workflow labels  
+- **👥 Team Generation** (`Makefile.team`) - Generate OpenCode agents from team XML
 
-### 1. Simple Hello (`simple-hello.yml`)
-- **Command**: `make run-hello`
-- **Triggers**: `push`, `workflow_dispatch`
-- **Purpose**: Basic demonstration workflow that outputs "Hello World!"
+## 🔧 Makefiles
 
-### 2. Simple OpenCode (`simple-opencode.yml`) 
-- **Command**: `make run-opencode-simple`
-- **Triggers**: `push`, `workflow_dispatch`
-- **Purpose**: Basic OpenCode installation and test
-- **Features**: Installs OpenCode, configures it, runs simple test
+### [`Makefile`](Makefile) - GitHub Actions Workflow Testing
+Test workflows locally using `act` before deploying to GitHub Actions.
 
-### 3. Enhanced OpenCode (`enhanced-opencode.yml`)
-- **Command**: `make run-opencode-enhanced`
-- **Triggers**: `push`, `workflow_dispatch`
-- **Purpose**: Comprehensive OpenCode workflow with multiple review stages
-- **Features**: 
-  - Setup and installation verification
-  - Security review job
-  - Safety review job (additional validation)
-
-## 📋 Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Docker** - Required for `act` to run workflows in containers
-- **Git** - For version control
-- **make** - For using the Makefile commands (usually pre-installed on Linux/macOS)
-
-### Docker Installation
-- **Linux**: Follow [Docker's official installation guide](https://docs.docker.com/engine/install/)
-- **macOS**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- **Windows**: Install [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-
-## 🛠 Installation
-
-### Option 1: Automatic Setup (Recommended)
 ```bash
-# Clone the repository
-git clone <repository-url>
+# One-liner setup and validation (from any directory)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile | make -f - setup
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile | make -f - validate
+
+# Local usage (in cloned repository)
+make setup                    # Install act and setup project
+make list                     # List available workflows
+make run-all                  # Run all workflows locally
+make run-hello                # Run hello world example
+make run-opencode-simple      # Run basic OpenCode workflow
+make run-opencode-enhanced    # Run enhanced OpenCode with reviews
+make validate                 # Validate workflow syntax
+make clean                    # Clean Docker containers and cache
+```
+
+### [`Makefile.ghar`](Makefile.ghar) - GitHub Auto-Routine Installer 🤖
+Install automated daily routine that checks for stale PRs and issues.
+
+```bash
+# One-liner installation
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install
+
+# Or clone and install
+make -f Makefile.ghar install    # Install complete system
+make -f Makefile.ghar validate   # Validate setup  
+make -f Makefile.ghar info       # Show configuration
+make -f Makefile.ghar clean      # Remove installed files
+```
+
+**What it installs:**
+- `ghar-daily-routine.yml` - Daily workflow (9:00 AM UTC)
+- `opencode-run.yml` - OpenCode runner workflow
+- `ghar-stale-check.md` - Stale check command definition
+- `opencode.jsonc` - OpenCode configuration (if missing)
+
+### [`Makefile.ghprj`](Makefile.ghprj) - GitHub Project Label Setup 🏷️
+Setup OSLC-aligned workflow task state labels with proper colors and descriptions.
+
+```bash
+# One-liner installation (from any directory)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup-dry-run
+
+# Local usage (in cloned repository) 
+make -f Makefile.ghprj setup                    # Setup all label types
+make -f Makefile.ghprj setup INTERACTIVE=true   # Interactive setup
+make -f Makefile.ghprj setup-dry-run           # Preview changes
+make -f Makefile.ghprj setup-list              # List current labels
+```
+
+**Label Systems Supported:**
+- **Workflow**: open, ready, in-progress, reviewed, closed, released
+- **Priority**: high, medium, low (urgency-based)  
+- **Severity**: critical, high, medium, low (impact-based)
+- **Confidence**: high, medium, low (certainty-based)
+- **Complexity**: high, medium, low (effort-based)
+- **Rank**: 1-10 (ordering-based)
+
+### [`Makefile.team`](Makefile.team) - OpenCode Team Agent Generator 👥
+Generate OpenCode agent definitions and commands from team XML files.
+
+```bash
+# One-liner generation (from any directory with teams/ folder)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.team | make -f - gen-opencode
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.team | make -f - gen-opencode TEAM_FILE=teams/custom.xml
+
+# Local usage (in cloned repository)
+make -f Makefile.team gen-opencode                           # Use default team
+make -f Makefile.team gen-opencode TEAM_FILE=teams/other.xml # Use specific team
+make -f Makefile.team clean-agents                          # Remove generated agents
+make -f Makefile.team clean-commands                        # Remove generated commands  
+make -f Makefile.team clean                                 # Clean all generated files
+```
+
+## 🚀 Quick Start
+
+### Option 1: Install GHAR Auto-Routine (Recommended for any repository)
+```bash
+# Add automated stale checking to your repository
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install
+git add .github .opencode && git commit -m "Add GHAR auto-routine"
+```
+
+### Option 2: Clone and Test Workflows Locally
+```bash
+git clone https://github.com/tbrandenburg/ghaw.git
 cd ghaw
-
-# Automatic setup - installs act and sets up the project
-make setup
+make setup                    # Install act CLI
+make list                     # See available workflows
+make run-all                  # Test all workflows locally
 ```
 
-### Option 2: Manual Installation
+### Option 3: Setup Project Labels
 ```bash
-# Install act manually
-curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+# One-liner label setup (requires gh CLI authentication)  
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup
 
-# Or using package managers:
-# Homebrew (macOS): brew install act
-# Chocolatey (Windows): choco install act-cli
-# GitHub CLI: gh extension install https://github.com/nektos/gh-act
-
-# Verify installation
-act --version
-```
-
-### Option 3: One-liner Quick Test
-```bash
-# Quick test without cloning - runs ghaw directly from GitHub
-tmp=$(mktemp -d) && git clone --depth=1 https://github.com/tbrandenburg/ghaw.git "$tmp" >/dev/null && make -f "$tmp/Makefile.ghprj"
-
-# For team workflows
-tmp=$(mktemp -d) && git clone --depth=1 https://github.com/tbrandenburg/ghaw.git "$tmp" >/dev/null && make -f "$tmp/Makefile.team"
-
-# For standard workflows  
-tmp=$(mktemp -d) && git clone --depth=1 https://github.com/tbrandenburg/ghaw.git "$tmp" >/dev/null && make -f "$tmp/Makefile"
-```
-
-## 🎮 Usage
-
-### Basic Commands
-
-```bash
-# List all available workflows and jobs
-make list
-# or directly with act
-act -l
-
-# Run all workflows (push event trigger)
-make run-all
-
-# Run specific workflows
-make run-hello
-make run-opencode-simple  
-make run-opencode-enhanced
-
-# Validate workflow syntax
-make validate
-```
-
-### Advanced Usage with Act
-
-```bash
-# Run workflows manually with act
-act push                                              # All push event workflows
-act workflow_dispatch                                 # All manual trigger workflows
-act -W .github/workflows/examples/simple-hello.yml           # Specific workflow file
-act -j simple-hello                                 # Specific job name
-
-# Use specific Docker images
-act -P ubuntu-latest=catthehacker/ubuntu:act-latest
-
-# Run with environment variables
-act push --env CUSTOM_VAR=value
+# Interactive setup with custom prefixes
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup INTERACTIVE=true
 ```
 
 ## 📄 Available Workflows
 
-### 1. Simple Hello (`simple-hello.yml`)
-- **Command**: `make run-hello`
-- **Triggers**: `push`, `workflow_dispatch`
-- **Purpose**: Basic demonstration workflow that outputs "Hello World!"
+### Examples Category
+- **`examples-simple-hello.yml`** - Basic "Hello World" demonstration  
+- **`examples-simple-opencode.yml`** - Basic OpenCode installation and test
+- **`examples-enhanced-opencode.yml`** - Enhanced OpenCode with security/safety reviews
+- **`examples-comprehensive-review.yml`** - Multi-stage comprehensive reviews
+- **`examples-simple-opencode-review-agent.yml`** - Simple review agent demo
 
-### 2. Simple OpenCode (`simple-opencode.yml`) 
-- **Command**: `make run-opencode-simple`
-- **Triggers**: `push`, `workflow_dispatch`
-- **Purpose**: Basic OpenCode installation and test
-- **Features**: Installs OpenCode, configures it, runs simple test
+### Core Workflows  
+- **`opencode-run.yml`** - Reusable OpenCode runner workflow (used by other workflows)
+- **`ghar-daily-routine.yml`** - Daily automated stale PR/issue checking
 
-### 3. Enhanced OpenCode (`enhanced-opencode.yml`)
-- **Command**: `make run-opencode-enhanced`
-- **Triggers**: `push`, `workflow_dispatch`
-- **Purpose**: Comprehensive OpenCode workflow with multiple review stages
-- **Features**: 
-  - Setup and installation verification
-  - Security review job
-  - Safety review job (additional validation)
+### Issue Management
+- **`issues-issue-command-executor.yml`** - Execute commands from issue comments
+- **`issues-issue-commands-list.yml`** - List available issue commands
 
-## 🔧 Makefile Commands
+### Automation (Disabled)
+- **`automation-*.yml.disabled`** - Various automation workflows (currently disabled)
 
-Run `make help` to see all available commands:
+## 🛠 Installation & Setup
 
-### Setup & Management
-| Command | Description |
-|---------|-------------|
-| `make setup` | Install act CLI and setup project directories |
-| `make list` | List available workflows and jobs |
-| `make validate` | Validate workflow syntax |
-| `make clean` | Clean Docker containers and act cache |
+### Prerequisites
+- **Docker** - Required for `act` to run workflows locally  
+- **Git** - Version control
+- **GitHub CLI (`gh`)** - Required for label setup and GHAR installation
+- **make** - Command execution (pre-installed on Linux/macOS)
+- **jq** - JSON processing (for label setup)
+- **python3** - URL encoding (for label setup)
 
-### Workflow Execution
-| Command | Description |
-|---------|-------------|
-| `make run-all` | Run all workflows (push event) |
-| `make run-hello` | Run simple hello world workflow |
-| `make run-opencode-simple` | Run basic OpenCode workflow |
-| `make run-opencode-enhanced` | Run enhanced OpenCode with security/safety reviews |
+### Install Dependencies
 
-## ⚙️ Configuration
+**GitHub CLI:**
+```bash
+# Install gh CLI
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
 
-### OpenCode Configuration
-The project includes OpenCode configuration files in `.github/opencode/`:
-- `config.json` - OpenCode settings and model configuration
+# Authenticate  
+gh auth login
+```
 
-### Project Structure
+**Docker:**
+```bash
+# Ubuntu/Debian
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER  # Add to docker group
+
+# macOS - Install Docker Desktop
+# Windows - Install Docker Desktop
+```
+
+## 📊 Project Setup
+
+### 1. Setup GitHub Repository Labels
+```bash
+# Setup complete OSLC-aligned label system
+make -f Makefile.ghprj setup
+
+# Interactive setup (choose prefixes)
+make -f Makefile.ghprj setup INTERACTIVE=true
+
+# Dry run (preview changes)
+make -f Makefile.ghprj setup-dry-run
+```
+
+### 2. Install Auto-Routine System
+```bash
+# Install automated stale checking
+make -f Makefile.ghar install
+
+# Commit the changes
+git add .github .opencode && git commit -m "Add GHAR auto-routine"
+```
+
+### 3. Generate Team Agents (if using team XML)
+```bash
+# Generate from default team
+make -f Makefile.team gen-opencode
+
+# Generate from specific team file
+make -f Makefile.team gen-opencode TEAM_FILE=teams/custom-team.xml
+```
+
+## ⭐ Features
+
+### 🤖 Automated Stale Management (GHAR)
+- **Daily checks** for stale PRs (>3 days) and issues (>3 days)
+- **Smart filtering** - ignores drafts, WIP, long-term labels
+- **Polite notifications** - mentions repository owner
+- **One-shot comments** - won't spam the same item twice
+- **Easy installation** - one-liner setup for any repository
+
+### 🏷️ OSLC-Aligned Label System  
+- **Workflow states**: open → ready → in-progress → reviewed → closed → released
+- **Metadata labels**: priority, severity, confidence, complexity, rank
+- **Consistent colors** - red (urgent/complex) to green (simple/safe)
+- **Custom namespaces** - support for prefixed labels (e.g., `priority/`, `p/`)
+
+### 👥 Team Agent Generation
+- **XML-driven** - define teams in structured XML format
+- **Auto-generation** - creates OpenCode agents and command definitions
+- **Role-based** - different agent types (developer, reviewer, etc.)
+- **Customizable** - team-specific instructions and capabilities
+
+### 🧪 Local Workflow Testing
+- **Act integration** - test GitHub Actions workflows locally
+- **Docker-based** - consistent environment matching GitHub Actions
+- **Multiple runners** - support for different runner images
+- **Validation** - syntax checking before deployment
+## 📁 Repository Structure
+
 ```
 ghaw/
 ├── .github/
-│   ├── opencode/          # OpenCode configuration files
-│   ├── prompts/           # AI prompt templates  
-│   └── workflows/         # GitHub Actions workflows
-│       ├── simple-hello.yml
-│       ├── simple-opencode.yml
-│       └── enhanced-opencode.yml
-├── Makefile              # Simplified command interface
-├── README.md            # Project documentation
-└── LICENSE              # MIT License
+│   └── workflows/                    # GitHub Actions workflows
+│       ├── examples-*.yml           # Example/demo workflows  
+│       ├── opencode-run.yml         # Reusable OpenCode runner
+│       ├── ghar-daily-routine.yml     # Daily automation
+│       └── issues-*.yml             # Issue management workflows
+├── .opencode/                       # OpenCode configuration
+│   ├── agents/                      # Generated agent definitions
+│   ├── commands/                    # OpenCode command definitions  
+│   └── opencode.jsonc               # OpenCode configuration
+├── teams/                           # Team XML definitions
+│   ├── dynamous.xml                 # Dynamous team configuration
+│   └── sw-dev-team.xml             # Software development team
+├── Makefile                         # Workflow testing (act integration)
+├── Makefile.ghar                    # GitHub Auto-Routine installer  
+├── Makefile.ghprj                   # Project label setup
+├── Makefile.team                    # Team agent generation
+├── README.md                        # This documentation
+└── LICENSE                          # MIT License
 ```
 
-## 🚀 Development
+## 🔍 Usage Examples
 
-### Adding New Workflows
-
-1. Create a new workflow file in `.github/workflows/`:
-```yaml
-name: My New Workflow
-on: 
-  push:
-  workflow_dispatch:
-jobs:
-  my-job:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: echo "Hello from new workflow!"
-```
-
-2. Test the workflow locally:
+### Test Workflows Locally
 ```bash
-make run-all
-# or for specific workflow
-act -W .github/workflows/my-new-workflow.yml
+# Setup and run all workflows
+make setup && make run-all
+
+# Run specific workflow type
+make run-hello                    # Simple demo
+make run-opencode-simple         # Basic OpenCode test
+make run-opencode-enhanced       # Full OpenCode with reviews
+
+# Advanced act usage
+act push -W .github/workflows/examples-simple-hello.yml
+act workflow_dispatch --env CUSTOM_VAR=value
 ```
 
-3. Add a Makefile command (optional):
-```makefile
-run-my-workflow: ## Run my new workflow
-	@echo "🚀 Running my workflow..."
-	@act workflow_dispatch -W .github/workflows/my-new-workflow.yml
+### Setup Repository Automation
+```bash
+# Install complete automation system (one-liner)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install
+
+# Setup GitHub labels for project management (one-liner)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup
+
+# Generate OpenCode agents from team definitions (one-liner - requires teams/ folder)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.team | make -f - gen-opencode
+
+# Local usage (in cloned repository)
+make -f Makefile.ghar install
+make -f Makefile.ghprj setup  
+make -f Makefile.team gen-opencode TEAM_FILE=teams/sw-dev-team.xml
 ```
 
-### Environment Detection
-Workflows can detect if they're running locally with `act`:
+### Customization Examples
+```bash
+# Custom GHAR source repository (one-liner)
+curl -fsSL https://raw.githubusercontent.com/your-org/ghaw/main/Makefile.ghar | make -f - install SOURCE_REPO=your-org/ghaw
 
+# Custom label prefixes (one-liner)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup PRIORITY_PREFIX=p SEVERITY_PREFIX=sev
+
+# Interactive label setup (one-liner)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup INTERACTIVE=true
+
+# Local customization (in cloned repository)
+make -f Makefile.ghprj setup PRIORITY_PREFIX=p SEVERITY_PREFIX=sev
+make -f Makefile.ghprj setup INTERACTIVE=true
+```
+
+## 🔧 Environment & Configuration
+
+### Actor Variables (act - local testing)
+When running locally with `act`, workflows can detect the environment:
 ```yaml
-- name: Environment check
+- name: Environment Detection
   run: |
     if [ "$ACT" = "true" ]; then
-      echo "Running locally with act"
-    else
-      echo "Running on GitHub Actions"
+      echo "🔬 Running locally with act"
+    else  
+      echo "☁️ Running on GitHub Actions"
     fi
 ```
 
-### OpenCode Integration
-To add OpenCode AI reviews to your workflows:
+### OpenCode Configuration
+Located in `.opencode/opencode.jsonc`:
+- **MCP servers** - context7, sequential_thinking
+- **Permissions** - read, write, edit, bash allowed
+- **External access** - controlled via permission settings
 
-```yaml
-- name: Install OpenCode
-  run: |
-    curl -fsSL https://opencode.ai/install | bash
-    echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+### GitHub Authentication
+- **Local**: Run `gh auth login` for interactive authentication
+- **Actions**: Uses `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}` automatically  
+- **OpenCode workflows**: Pass token via `GH_TOKEN="$GH_TOKEN"` in clean environments
 
-- name: Configure OpenCode  
-  run: |
-    mkdir -p "$HOME/.config/opencode"
-    cp .github/opencode/config.json "$HOME/.config/opencode/config.json"
+## 🚀 Quick Commands Reference
 
-- name: Run AI Review
-  run: |
-    opencode --model "opencode/big-pickle" run 'Review this code for security issues'
+### Makefile (Workflow Testing)
+```bash
+make help                     # Show all commands  
+make setup                    # Install act + setup
+make list                     # List workflows
+make run-all                  # Run all workflows  
+make validate                 # Validate syntax
+make clean                    # Clean Docker cache
 ```
 
-## 🔍 Troubleshooting
-
-### Common Issues
-
-**1. "act: command not found"**
+### Makefile.ghar (Auto-Routine)
 ```bash
-# Install act via the setup command
-make setup
-
-# Or install manually
-curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+make -f Makefile.ghar install    # Install automation  
+make -f Makefile.ghar validate   # Validate setup
+make -f Makefile.ghar info       # Show config
+make -f Makefile.ghar clean      # Remove files
 ```
 
-**2. "Docker daemon not running"**
+### Makefile.ghprj (Label Setup) 
 ```bash
-# Start Docker service (Linux)
-sudo systemctl start docker
-
-# Or start Docker Desktop manually on macOS/Windows
+make -f Makefile.ghprj setup           # Setup labels
+make -f Makefile.ghprj setup-dry-run   # Preview changes
+make -f Makefile.ghprj setup-list      # List current labels
 ```
 
-**3. "No workflows found"**
-```bash
-# Check if workflows exist
-ls .github/workflows/
-
-# List available workflows
-make list
-```
-
-**4. OpenCode installation fails**
-```bash
-# Check if curl is available
-curl --version
-
-# Manually install OpenCode
-curl -fsSL https://opencode.ai/install | bash
-```
-
-**5. Permission denied errors**
-```bash
-# Fix Docker permissions (Linux)
-sudo usermod -aG docker $USER
-# Logout and login again
-
-# Or run with sudo (not recommended)
-sudo make run-all
-```
-
-### Debug Commands
-```bash
-# Show available workflows
-make list
-
-# Validate workflow syntax
-make validate
-
-# Clean Docker resources
-make clean
-
-# Check act version
-act --version
+### Makefile.team (Team Generation)
+```bash  
+make -f Makefile.team gen-opencode     # Generate agents  
+make -f Makefile.team clean            # Clean generated files
 ```
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Add your workflows in `.github/workflows/`
-4. Test locally: `make test-workflows`
-5. Commit your changes: `git commit -am 'Add feature'`
-6. Push to the branch: `git push origin feature-name`
-7. Create a Pull Request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Test changes locally: `make setup && make validate`  
+4. Commit changes: `git commit -m 'Add amazing feature'`
+5. Push to branch: `git push origin feature/amazing-feature`
+6. Create Pull Request
+
+### Development Guidelines
+- **Test workflows locally** with `act` before committing
+- **Validate Makefile syntax** - use consistent formatting  
+- **Update documentation** - especially if adding new Makefiles
+- **Follow naming conventions** - `examples-*.yml`, `Makefile.*`
 
 ## 📚 Resources
 
-- [act GitHub Repository](https://github.com/nektos/act)
-- [act Documentation](https://nektosact.com)
+- [nektos/act](https://github.com/nektos/act) - Run GitHub Actions locally
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [GitHub CLI Documentation](https://cli.github.com/manual/)  
+- [OpenCode Documentation](https://opencode.ai/docs)
 - [Docker Documentation](https://docs.docker.com/)
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
----
-
-**Quick Commands Reference:**
+## 🚀 **TL;DR: Essential One-Liner Commands**
 ```bash
-make setup                 # Setup project and install act
-make list                  # List workflows  
-make run-all              # Run all workflows
-make run-hello            # Run hello world workflow
-make run-opencode-simple  # Run basic OpenCode test
-make run-opencode-enhanced # Run enhanced OpenCode with reviews
-make validate             # Validate workflow syntax
-make clean                # Clean Docker resources
-make help                 # Show all commands
+# 🤖 Add auto-routine to any repository (most common use case)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install
+
+# 🏷️ Setup GitHub project labels 
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghprj | make -f - setup
+
+# 👥 Generate OpenCode agents (requires teams/ folder)
+curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.team | make -f - gen-opencode
+
+# 🧪 Setup workflow testing (requires cloning)
+git clone https://github.com/tbrandenburg/ghaw.git && cd ghaw && make setup && make run-all
 ```

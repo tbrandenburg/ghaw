@@ -14,9 +14,9 @@ SOURCE_REPO ?= tbrandenburg/ghaw
 SOURCE_BRANCH ?= main
 
 # URLs for fetching files
-WORKFLOW_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.github/workflows/routines-daily-routine.yml
+WORKFLOW_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.github/workflows/ghar-daily-routine.yml
 OPENCODE_RUN_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.github/workflows/opencode-run.yml
-STALE_CHECK_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.opencode/commands/stale-check.md
+STALE_CHECK_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.opencode/commands/ghar-stale-check.md
 OPENCODE_CONFIG_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.opencode/opencode.jsonc
 
 .PHONY: help install install-workflow install-opencode-run install-stale-check install-opencode-config setup-dirs clean
@@ -41,13 +41,13 @@ setup-dirs:
 	@mkdir -p .opencode/commands
 
 install-workflow: setup-dirs
-	@echo "📥 Checking for routines-daily-routine.yml..."
-	@if [ ! -f .github/workflows/routines-daily-routine.yml ]; then \
+	@echo "📥 Checking for ghar-daily-routine.yml..."
+	@if [ ! -f .github/workflows/ghar-daily-routine.yml ]; then \
 		echo "📥 Downloading daily-routine.yml..."; \
-		curl -fsSL "$(WORKFLOW_URL)" -o .github/workflows/routines-daily-routine.yml; \
+		curl -fsSL "$(WORKFLOW_URL)" -o .github/workflows/ghar-daily-routine.yml; \
 		echo "✅ Downloaded daily-routine.yml"; \
 	else \
-		echo "⚠️  routines-daily-routine.yml already exists - skipping download"; \
+		echo "⚠️  ghar-daily-routine.yml already exists - skipping download"; \
 	fi
 
 install-opencode-run: setup-dirs
@@ -61,13 +61,13 @@ install-opencode-run: setup-dirs
 	fi
 
 install-stale-check: setup-dirs
-	@echo "📥 Checking for stale-check.md..."
-	@if [ ! -f .opencode/commands/stale-check.md ]; then \
-		echo "📥 Downloading stale-check.md..."; \
-		curl -fsSL "$(STALE_CHECK_URL)" -o .opencode/commands/stale-check.md; \
-		echo "✅ Downloaded stale-check.md"; \
+	@echo "📥 Checking for ghar-stale-check.md..."
+	@if [ ! -f .opencode/commands/ghar-stale-check.md ]; then \
+		echo "📥 Downloading ghar-stale-check.md..."; \
+		curl -fsSL "$(STALE_CHECK_URL)" -o .opencode/commands/ghar-stale-check.md; \
+		echo "✅ Downloaded ghar-stale-check.md"; \
 	else \
-		echo "⚠️  stale-check.md already exists - skipping download"; \
+		echo "⚠️  ghar-stale-check.md already exists - skipping download"; \
 	fi
 
 install-opencode-config: setup-dirs
@@ -85,9 +85,9 @@ install: install-opencode-run install-workflow install-stale-check install-openc
 	@echo "🎉 Daily routine installation complete!"
 	@echo ""
 	@echo "What was installed:"
-	@echo "  📄 .github/workflows/routines-daily-routine.yml - Main daily routine workflow (if missing)"
+	@echo "  📄 .github/workflows/ghar-daily-routine.yml        - Main daily routine workflow (if missing)"
 	@echo "  📄 .github/workflows/opencode-run.yml          - OpenCode runner (if missing)"
-	@echo "  📄 .opencode/commands/stale-check.md           - Stale check command (if missing)"
+	@echo "  📄 .opencode/commands/ghar-stale-check.md      - Stale check command (if missing)"
 	@echo "  📄 .opencode/opencode.jsonc                    - OpenCode configuration (if missing)"
 	@echo ""
 	@echo "Configuration:"
@@ -101,12 +101,12 @@ install: install-opencode-run install-workflow install-stale-check install-openc
 	@echo "  2. Test the workflow manually in GitHub Actions"
 	@echo "  3. The workflow will run automatically daily"
 	@echo ""
-	@echo "To customize the schedule, edit .github/workflows/routines/daily-routine.yml"
+	@echo "To customize the schedule, edit .github/workflows/ghar-daily-routine.yml"
 
 clean:
 	@echo "🗑️  Removing daily routine files..."
-	@rm -f .github/workflows/routines-daily-routine.yml
-	@rm -f .opencode/commands/stale-check.md
+	@rm -f .github/workflows/ghar-daily-routine.yml
+	@rm -f .opencode/commands/ghar-stale-check.md
 	@echo "✅ Cleaned up daily routine files"
 	@echo "   Note: opencode-run.yml and opencode.jsonc were preserved as they may be used by other workflows"
 
