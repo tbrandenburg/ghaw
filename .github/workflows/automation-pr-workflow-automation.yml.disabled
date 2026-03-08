@@ -1,4 +1,4 @@
-name: Pull Request Workflow Automation
+name: Automation - Pull Request Workflow Automation
 
 on:
   pull_request:

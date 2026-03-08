@@ -1,4 +1,4 @@
-name: Issue Workflow Automation
+name: Automation - Issue Workflow Automation
 
 on:
   issues:

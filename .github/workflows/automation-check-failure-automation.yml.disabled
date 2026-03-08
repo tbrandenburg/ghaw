@@ -1,4 +1,4 @@
-name: Check Run Failure Automation
+name: Automation - Check Run Failure Automation
 
 on:
   check_run:
