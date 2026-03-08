@@ -14,106 +14,60 @@ permissions:
   checks: read
 
 jobs:
-  determine-action:
-    runs-on: ubuntu-latest
-    # Skip workflow for push events - only handle PR-related events
-    if: github.event_name != 'push'
-    outputs:
-      should_run_opencode: ${{ steps.determine-event.outputs.should_run_opencode }}
-      event_description: ${{ steps.determine-event.outputs.event_description }}
-      pr_number: ${{ steps.get-pr-info.outputs.pr_number }}
-      pr_title: ${{ steps.get-pr-info.outputs.pr_title }}
-      pr_author: ${{ steps.get-pr-info.outputs.pr_author }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Determine PR event type
-        id: determine-event
-        run: |
-          EVENT_TYPE="${{ github.event_name }}"
-          ACTION="${{ github.event.action }}"
-          SHOULD_RUN_OPENCODE="false"
-          EVENT_DESCRIPTION=""
-          
-          echo "Event: $EVENT_TYPE, Action: $ACTION"
-          
-          if [ "$EVENT_TYPE" = "pull_request" ] && [ "$ACTION" = "opened" ]; then
-            echo "New pull request created"
-            SHOULD_RUN_OPENCODE="true"
-            EVENT_DESCRIPTION="pr-opened"
-          elif [ "$EVENT_TYPE" = "check_run" ] && [ "$ACTION" = "completed" ]; then
-            echo "Check run completed"
-            CHECK_STATUS=$(echo '${{ toJSON(github.event) }}' | jq -r '.check_run.conclusion // ""')
-            if [ "$CHECK_STATUS" = "failure" ] || [ "$CHECK_STATUS" = "cancelled" ] || [ "$CHECK_STATUS" = "timed_out" ]; then
-              echo "Check failed with status: $CHECK_STATUS"
-              SHOULD_RUN_OPENCODE="true"
-              EVENT_DESCRIPTION="check-failed"
-            fi
-          elif [ "$EVENT_TYPE" = "workflow_run" ] && [ "$ACTION" = "completed" ]; then
-            echo "Workflow run completed"
-            WORKFLOW_STATUS=$(echo '${{ toJSON(github.event) }}' | jq -r '.workflow_run.conclusion // ""')
-            if [ "$WORKFLOW_STATUS" = "failure" ] || [ "$WORKFLOW_STATUS" = "cancelled" ] || [ "$WORKFLOW_STATUS" = "timed_out" ]; then
-              echo "Workflow failed with status: $WORKFLOW_STATUS"
-              SHOULD_RUN_OPENCODE="true"
-              EVENT_DESCRIPTION="workflow-failed"
-            fi
-          fi
-          
-          echo "should_run_opencode=$SHOULD_RUN_OPENCODE" >> $GITHUB_OUTPUT
-          echo "event_description=$EVENT_DESCRIPTION" >> $GITHUB_OUTPUT
-
-      - name: Get PR information
-        if: steps.determine-event.outputs.should_run_opencode == 'true'
-        id: get-pr-info
-        run: |
-          PR_NUMBER=""
-          PR_TITLE=""
-          PR_AUTHOR=""
-          
-          # Use GitHub API to safely get event information
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_NUMBER=$(echo '${{ toJSON(github.event.pull_request) }}' | jq -r '.number // ""')
-            PR_TITLE=$(echo '${{ toJSON(github.event.pull_request) }}' | jq -r '.title // ""')
-            PR_AUTHOR=$(echo '${{ toJSON(github.event.pull_request) }}' | jq -r '.user.login // ""')
-          elif [ "${{ github.event_name }}" = "check_run" ]; then
-            # Extract PR info from check run event if available
-            PR_DATA=$(echo '${{ toJSON(github.event.check_run.pull_requests) }}' | jq -r '.[0] // {}')
-            PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number // ""')
-            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // ""')
-            PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.user.login // ""')
-          elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # Extract PR info from workflow run event if available
-            PR_DATA=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0] // {}')
-            PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number // ""')
-            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // ""')
-            PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.user.login // ""')
-          fi
-          
-          echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
-          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT  
-          echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
-
-  call-opencode:
-    needs: determine-action
-    if: needs.determine-action.outputs.should_run_opencode == 'true'
+  pr-opened:
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
     uses: ./.github/workflows/opencode-run.yml
     with:
-      run-name: "pr-workflow-${{ needs.determine-action.outputs.event_description }}"
+      run-name: "pr-opened"
       prompt: |
-        Pull Request Workflow Event Analysis
+        New Pull Request Created
         
-        Event Type: ${{ github.event_name }}
-        Action: ${{ github.event.action }}
-        Event Description: ${{ needs.determine-action.outputs.event_description }}
-        PR Number: #${{ needs.determine-action.outputs.pr_number }}
-        PR Title: "${{ needs.determine-action.outputs.pr_title }}"
-        PR Author: ${{ needs.determine-action.outputs.pr_author }}
-        Actor: ${{ github.actor }}
+        Event: pull_request opened
+        PR Number: #${{ github.event.pull_request.number }}
+        PR Title: "${{ github.event.pull_request.title }}"
+        PR Author: ${{ github.event.pull_request.user.login }}
         Repository: ${{ github.repository }}
         
         This is a dummy message for PR workflow automation testing.
-        Please acknowledge receipt of this pull request workflow event.
+        Please acknowledge receipt of this new pull request event.
+      model: "opencode/big-pickle"
+      agent: "build"
+      timeout-minutes: 10
+
+  check-failed:
+    if: github.event_name == 'check_run' && github.event.action == 'completed' && (github.event.check_run.conclusion == 'failure' || github.event.check_run.conclusion == 'cancelled' || github.event.check_run.conclusion == 'timed_out')
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: "check-failed"
+      prompt: |
+        Check Run Failed
+        
+        Event: check_run completed with failure
+        Check Name: ${{ github.event.check_run.name }}
+        Check Status: ${{ github.event.check_run.conclusion }}
+        Repository: ${{ github.repository }}
+        
+        This is a dummy message for check failure automation testing.
+        Please acknowledge receipt of this check failure event.
+      model: "opencode/big-pickle"
+      agent: "build"
+      timeout-minutes: 10
+
+  workflow-failed:
+    if: github.event_name == 'workflow_run' && github.event.action == 'completed' && (github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'cancelled' || github.event.workflow_run.conclusion == 'timed_out')
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: "workflow-failed"
+      prompt: |
+        Workflow Run Failed
+        
+        Event: workflow_run completed with failure
+        Workflow Name: ${{ github.event.workflow_run.name }}
+        Workflow Status: ${{ github.event.workflow_run.conclusion }}
+        Repository: ${{ github.repository }}
+        
+        This is a dummy message for workflow failure automation testing.
+        Please acknowledge receipt of this workflow failure event.
       model: "opencode/big-pickle"
       agent: "build"
       timeout-minutes: 10
