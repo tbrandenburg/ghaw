@@ -61,11 +61,11 @@ REPO ?= $(shell gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null)
 WORKFLOW_PREFIX ?=
 
 # Metadata label namespaces - each can be configured independently
-PRIORITY_PREFIX ?= priority     # Priority urgency (priority/high, priority/medium, priority/low)
-SEVERITY_PREFIX ?= severity     # Impact severity (severity/critical, severity/high, etc.)
+PRIORITY_PREFIX ?= priority # Priority urgency (priority/high, priority/medium, priority/low)
+SEVERITY_PREFIX ?= severity # Impact severity (severity/critical, severity/high, etc.)
 CONFIDENCE_PREFIX ?= confidence # Certainty level (confidence/high, confidence/medium, confidence/low)  
 COMPLEXITY_PREFIX ?= complexity # Implementation effort (complexity/high, complexity/medium, complexity/low)
-RANK_PREFIX ?= rank             # Issue ordering rank (rank/1, rank/2, ..., rank/10)
+RANK_PREFIX ?= rank # Issue ordering rank (rank/1, rank/2, ..., rank/10)
 
 # =============================================================================
 # DEBUGGING CONFIGURATION
@@ -391,28 +391,33 @@ endef
 define PROCESS_ALL_METADATA_PREFIXES
 if echo "$$name" | grep -q "^priority:"; then \
   name="$${name#priority:}"; \
-  if [ -n "$$PRIORITY_PREFIX" ]; then \
-    name="$$PRIORITY_PREFIX/$$name"; \
+  prefix=$(strip $(PRIORITY_PREFIX)); \
+  if [ -n "$$prefix" ]; then \
+    name="$$prefix/$$name"; \
   fi; \
 elif echo "$$name" | grep -q "^severity:"; then \
   name="$${name#severity:}"; \
-  if [ -n "$$SEVERITY_PREFIX" ]; then \
-    name="$$SEVERITY_PREFIX/$$name"; \
+  prefix=$(strip $(SEVERITY_PREFIX)); \
+  if [ -n "$$prefix" ]; then \
+    name="$$prefix/$$name"; \
   fi; \
 elif echo "$$name" | grep -q "^confidence:"; then \
   name="$${name#confidence:}"; \
-  if [ -n "$$CONFIDENCE_PREFIX" ]; then \
-    name="$$CONFIDENCE_PREFIX/$$name"; \
+  prefix=$(strip $(CONFIDENCE_PREFIX)); \
+  if [ -n "$$prefix" ]; then \
+    name="$$prefix/$$name"; \
   fi; \
 elif echo "$$name" | grep -q "^complexity:"; then \
   name="$${name#complexity:}"; \
-  if [ -n "$$COMPLEXITY_PREFIX" ]; then \
-    name="$$COMPLEXITY_PREFIX/$$name"; \
+  prefix=$(strip $(COMPLEXITY_PREFIX)); \
+  if [ -n "$$prefix" ]; then \
+    name="$$prefix/$$name"; \
   fi; \
 elif echo "$$name" | grep -q "^rank:"; then \
   name="$${name#rank:}"; \
-  if [ -n "$$RANK_PREFIX" ]; then \
-    name="$$RANK_PREFIX/$$name"; \
+  prefix=$(strip $(RANK_PREFIX)); \
+  if [ -n "$$prefix" ]; then \
+    name="$$prefix/$$name"; \
   fi; \
 else \
   if [ -n "$$PREFIX" ]; then \
