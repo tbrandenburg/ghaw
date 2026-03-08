@@ -10,14 +10,14 @@ You are tasked with checking for stale pull requests and issues in this reposito
 
 ## Task 2: Check for Stale Pull Requests
 
-- Find PRs that have been open for more than 14 days without any activity (no comments, commits, or updates)
+- Find PRs that have been open for more than 3 days without any activity (no comments, commits, or updates)
 - Ignore PRs that are marked as drafts or have "WIP" in the title
 - For each stale PR found, add a comment using the template below
 
 ### Stale PR Comment Template
 Use this exact template (replace `[REPO-OWNER]` with actual username):
 ```
-🕰️ This pull request has been inactive for over 14 days. 
+🕰️ This pull request has been inactive for over 3 days. 
 
 @[REPO-OWNER] - Could you please review this PR or provide an update on its status?
 
@@ -26,14 +26,14 @@ If this PR is no longer needed, please consider closing it to keep the repositor
 
 ## Task 3: Check for Stale Issues
 
-- Find issues that have been open for more than 30 days without any activity (no comments or updates)
+- Find issues that have been open for more than 3 days without any activity (no comments or updates)
 - Ignore issues that have labels like "enhancement", "long-term", "backlog", or "wontfix"
 - For each stale issue found, add a comment using the template below
 
 ### Stale Issue Comment Template
 Use this exact template (replace `[REPO-OWNER]` with actual username):
 ```
-🕰️ This issue has been inactive for over 30 days.
+🕰️ This issue has been inactive for over 3 days.
 
 @[REPO-OWNER] - Could you provide an update on this issue?
 

@@ -17,11 +17,12 @@ SOURCE_BRANCH ?= main
 WORKFLOW_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.github/workflows/routines/daily-routine.yml
 OPENCODE_RUN_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.github/workflows/opencode-run.yml
 STALE_CHECK_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.opencode/commands/stale-check.md
+OPENCODE_CONFIG_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.opencode/opencode.jsonc
 
 # Detect current repository owner from git remote
 REPO_OWNER := $(shell git remote get-url origin 2>/dev/null | sed -n 's|.*github\.com[:/]\([^/]*\)/.*|\1|p')
 
-.PHONY: help install install-workflow install-opencode-run install-stale-check setup-dirs detect-owner clean
+.PHONY: help install install-workflow install-opencode-run install-stale-check install-opencode-config setup-dirs detect-owner clean
 
 help:
 	@echo "GitHub Auto-Routine (GHAR) - Daily Routine Installer"
@@ -52,9 +53,14 @@ setup-dirs: detect-owner
 	@mkdir -p .opencode/commands
 
 install-workflow: setup-dirs
-	@echo "📥 Downloading daily-routine.yml..."
-	@curl -fsSL "$(WORKFLOW_URL)" -o .github/workflows/routines-daily-routine.yml
-	@echo "✅ Downloaded daily-routine.yml"
+	@echo "📥 Checking for routines-daily-routine.yml..."
+	@if [ ! -f .github/workflows/routines-daily-routine.yml ]; then \
+		echo "📥 Downloading daily-routine.yml..."; \
+		curl -fsSL "$(WORKFLOW_URL)" -o .github/workflows/routines-daily-routine.yml; \
+		echo "✅ Downloaded daily-routine.yml"; \
+	else \
+		echo "⚠️  routines-daily-routine.yml already exists - skipping download"; \
+	fi
 
 install-opencode-run: setup-dirs
 	@echo "📥 Checking for opencode-run.yml..."
@@ -63,25 +69,41 @@ install-opencode-run: setup-dirs
 		curl -fsSL "$(OPENCODE_RUN_URL)" -o .github/workflows/opencode-run.yml; \
 		echo "✅ Downloaded opencode-run.yml"; \
 	else \
-		echo "✅ opencode-run.yml already exists"; \
+		echo "⚠️  opencode-run.yml already exists - skipping download"; \
 	fi
 
 install-stale-check: setup-dirs
-	@echo "📥 Downloading stale-check.md..."
-	@curl -fsSL "$(STALE_CHECK_URL)" -o .opencode/commands/stale-check.md.tmp
-	@echo "🔧 Configuring for repository owner: $(REPO_OWNER)"
-	@sed 's/@tbrandenburg/@$(REPO_OWNER)/g' .opencode/commands/stale-check.md.tmp > .opencode/commands/stale-check.md
-	@rm .opencode/commands/stale-check.md.tmp
-	@echo "✅ Downloaded and configured stale-check.md"
+	@echo "📥 Checking for stale-check.md..."
+	@if [ ! -f .opencode/commands/stale-check.md ]; then \
+		echo "📥 Downloading stale-check.md..."; \
+		curl -fsSL "$(STALE_CHECK_URL)" -o .opencode/commands/stale-check.md.tmp; \
+		echo "🔧 Configuring for repository owner: $(REPO_OWNER)"; \
+		sed 's/@tbrandenburg/@$(REPO_OWNER)/g' .opencode/commands/stale-check.md.tmp > .opencode/commands/stale-check.md; \
+		rm .opencode/commands/stale-check.md.tmp; \
+		echo "✅ Downloaded and configured stale-check.md"; \
+	else \
+		echo "⚠️  stale-check.md already exists - skipping download"; \
+	fi
 
-install: install-opencode-run install-workflow install-stale-check
+install-opencode-config: setup-dirs
+	@echo "📥 Checking for OpenCode configuration..."
+	@if [ ! -f .opencode/opencode.json ] && [ ! -f .opencode/opencode.jsonc ]; then \
+		echo "📥 Downloading opencode.jsonc (OpenCode configuration)..."; \
+		curl -fsSL "$(OPENCODE_CONFIG_URL)" -o .opencode/opencode.jsonc; \
+		echo "✅ Downloaded opencode.jsonc"; \
+	else \
+		echo "⚠️  OpenCode configuration already exists - skipping download"; \
+	fi
+
+install: install-opencode-run install-workflow install-stale-check install-opencode-config
 	@echo ""
 	@echo "🎉 Daily routine installation complete!"
 	@echo ""
 	@echo "What was installed:"
-	@echo "  📄 .github/workflows/routines-daily-routine.yml  - Main daily routine workflow"
+	@echo "  📄 .github/workflows/routines-daily-routine.yml  - Main daily routine workflow (if missing)"
 	@echo "  📄 .github/workflows/opencode-run.yml   - OpenCode runner (if missing)"
-	@echo "  📄 .opencode/commands/stale-check.md    - Stale check command"
+	@echo "  📄 .opencode/commands/stale-check.md    - Stale check command (if missing)"
+	@echo "  📄 .opencode/opencode.jsonc             - OpenCode configuration (if missing)"
 	@echo ""
 	@echo "Configuration:"
 	@echo "  🔧 Repository owner: @$(REPO_OWNER)"
@@ -102,7 +124,7 @@ clean:
 	@rm -f .github/workflows/routines-daily-routine.yml
 	@rm -f .opencode/commands/stale-check.md
 	@echo "✅ Cleaned up daily routine files"
-	@echo "   Note: opencode-run.yml was preserved as it may be used by other workflows"
+	@echo "   Note: opencode-run.yml and opencode.jsonc were preserved as they may be used by other workflows"
 
 # Validation targets
 validate: detect-owner

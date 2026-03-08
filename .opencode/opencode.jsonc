@@ -12,17 +12,21 @@
       "enabled": true
     }
   },
-  "tools": {
-    "read": true,
-    "write": true,
-    "edit": true,
-    "bash": true,
-    "grep": true,
-    "glob": true,
-    "list": true,
-    "patch": true,
-    "todowrite": true,
-    "todoread": true,
-    "webfetch": true
+  "permission": {
+    "read": "allow",
+    "write": "allow",
+    "edit": "allow",
+    "bash": "allow",
+    "skill": "allow",
+    "question": "deny",
+    "doom_loop": "deny",
+    "external_directory": "deny",
+    "grep": "allow",
+    "glob": "allow",
+    "list": "allow",
+    "patch": "allow",
+    "todowrite": "allow",
+    "todoread": "allow",
+    "webfetch": "allow"
   }
 }
