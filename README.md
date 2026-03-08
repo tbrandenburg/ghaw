@@ -142,7 +142,7 @@ make validate
 # Run workflows manually with act
 act push                                              # All push event workflows
 act workflow_dispatch                                 # All manual trigger workflows
-act -W .github/workflows/simple-hello.yml           # Specific workflow file
+act -W .github/workflows/examples/simple-hello.yml           # Specific workflow file
 act -j simple-hello                                 # Specific job name
 
 # Use specific Docker images

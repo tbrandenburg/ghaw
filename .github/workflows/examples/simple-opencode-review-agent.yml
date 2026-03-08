@@ -1,7 +1,6 @@
 name: Simple OpenCode Review Agent
 
 on:
-  push:
   workflow_dispatch:
 
 jobs:

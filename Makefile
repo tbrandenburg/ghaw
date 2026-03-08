@@ -49,15 +49,15 @@ run-all: ## Run all workflows
 
 run-hello: ## Run hello world workflow
 	@echo "🚀 Running hello world..."
-	@act push -W .github/workflows/simple-hello.yml
+	@act push -W .github/workflows/examples/simple-hello.yml
 
 run-opencode-simple: ## Run OpenCode workflow
 	@echo "🚀 Running OpenCode workflow..."
-	@act workflow_dispatch -W .github/workflows/simple-opencode.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest
+	@act workflow_dispatch -W .github/workflows/examples/simple-opencode.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest
 
 run-opencode-enhanced: ## Run enhanced OpenCode workflow with security and safety reviews
 	@echo "🚀 Running enhanced OpenCode workflow..."
-	@act workflow_dispatch -W .github/workflows/enhanced-opencode.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest
+	@act workflow_dispatch -W .github/workflows/examples/enhanced-opencode.yml -P ubuntu-latest=catthehacker/ubuntu:act-latest
 
 # Cleanup
 clean: ## Clean Docker containers and act cache

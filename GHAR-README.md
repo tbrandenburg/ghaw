@@ -14,7 +14,7 @@ curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.gha
 
 The installer automatically downloads and configures:
 
-- **Daily Routine Workflow** (`.github/workflows/daily-routine.yml`)
+- **Daily Routine Workflow** (`.github/workflows/routines/daily-routine.yml`)
   - Runs daily at 9:00 AM UTC
   - Can be triggered manually via GitHub Actions
   
@@ -81,13 +81,13 @@ curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.gha
    - Click "Run workflow" to test manually
 
 3. **Customize if needed:**
-   - Edit `.github/workflows/daily-routine.yml` to change the schedule
+   - Edit `.github/workflows/routines/daily-routine.yml` to change the schedule
    - Modify `.opencode/commands/stale-check.md` to adjust thresholds
 
 ## 🔧 Customization
 
 ### Change Schedule
-Edit the cron expression in `daily-routine.yml`:
+Edit the cron expression in `routines/daily-routine.yml`:
 ```yaml
 schedule:
   - cron: '0 12 * * *'  # Daily at noon UTC

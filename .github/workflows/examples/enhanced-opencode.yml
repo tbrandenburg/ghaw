@@ -1,7 +1,6 @@
 name: Enhanced OpenCode Test
 
 on:
-  push:
   workflow_dispatch:
 
 jobs:
