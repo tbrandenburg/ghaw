@@ -1,0 +1,118 @@
+# GitHub Auto-Routine (GHAR) - Daily Routine Installer
+# 
+# This Makefile installs a daily routine workflow that automatically
+# checks for stale PRs and issues in any GitHub repository.
+#
+# Usage:
+#   curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install
+#
+# Or with custom source repo:
+#   curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install SOURCE_REPO=owner/repo
+
+# Default source repository (can be overridden)
+SOURCE_REPO ?= tbrandenburg/ghaw
+SOURCE_BRANCH ?= main
+
+# URLs for fetching files
+WORKFLOW_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.github/workflows/daily-routine.yml
+OPENCODE_RUN_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.github/workflows/opencode-run.yml
+STALE_CHECK_URL = https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/.opencode/commands/stale-check.md
+
+# Detect current repository owner from git remote
+REPO_OWNER := $(shell git remote get-url origin 2>/dev/null | sed -n 's|.*github\.com[:/]\([^/]*\)/.*|\1|p')
+
+.PHONY: help install install-workflow install-opencode-run install-stale-check setup-dirs detect-owner clean
+
+help:
+	@echo "GitHub Auto-Routine (GHAR) - Daily Routine Installer"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make -f Makefile.ghar install    Install complete daily routine system"
+	@echo "  make -f Makefile.ghar clean      Remove installed files"
+	@echo ""
+	@echo "One-liner installation:"
+	@echo "  curl -fsSL https://raw.githubusercontent.com/$(SOURCE_REPO)/$(SOURCE_BRANCH)/Makefile.ghar | make -f - install"
+	@echo ""
+	@echo "Variables:"
+	@echo "  SOURCE_REPO=$(SOURCE_REPO)    Source repository for files"
+	@echo "  SOURCE_BRANCH=$(SOURCE_BRANCH)          Source branch"
+	@echo "  REPO_OWNER=$(REPO_OWNER)       Detected repository owner"
+
+detect-owner:
+	@if [ -z "$(REPO_OWNER)" ]; then \
+		echo "❌ Error: Could not detect repository owner from git remote."; \
+		echo "   Make sure you're in a git repository with a GitHub remote."; \
+		exit 1; \
+	fi
+	@echo "✅ Detected repository owner: $(REPO_OWNER)"
+
+setup-dirs: detect-owner
+	@echo "📁 Creating required directories..."
+	@mkdir -p .github/workflows
+	@mkdir -p .opencode/commands
+
+install-workflow: setup-dirs
+	@echo "📥 Downloading daily-routine.yml..."
+	@curl -fsSL "$(WORKFLOW_URL)" -o .github/workflows/daily-routine.yml
+	@echo "✅ Downloaded daily-routine.yml"
+
+install-opencode-run: setup-dirs
+	@echo "📥 Checking for opencode-run.yml..."
+	@if [ ! -f .github/workflows/opencode-run.yml ]; then \
+		echo "📥 Downloading opencode-run.yml (required dependency)..."; \
+		curl -fsSL "$(OPENCODE_RUN_URL)" -o .github/workflows/opencode-run.yml; \
+		echo "✅ Downloaded opencode-run.yml"; \
+	else \
+		echo "✅ opencode-run.yml already exists"; \
+	fi
+
+install-stale-check: setup-dirs
+	@echo "📥 Downloading stale-check.md..."
+	@curl -fsSL "$(STALE_CHECK_URL)" -o .opencode/commands/stale-check.md.tmp
+	@echo "🔧 Configuring for repository owner: $(REPO_OWNER)"
+	@sed 's/@tbrandenburg/@$(REPO_OWNER)/g' .opencode/commands/stale-check.md.tmp > .opencode/commands/stale-check.md
+	@rm .opencode/commands/stale-check.md.tmp
+	@echo "✅ Downloaded and configured stale-check.md"
+
+install: install-opencode-run install-workflow install-stale-check
+	@echo ""
+	@echo "🎉 Daily routine installation complete!"
+	@echo ""
+	@echo "What was installed:"
+	@echo "  📄 .github/workflows/daily-routine.yml  - Main daily routine workflow"
+	@echo "  📄 .github/workflows/opencode-run.yml   - OpenCode runner (if missing)"
+	@echo "  📄 .opencode/commands/stale-check.md    - Stale check command"
+	@echo ""
+	@echo "Configuration:"
+	@echo "  🔧 Repository owner: @$(REPO_OWNER)"
+	@echo "  ⏰ Schedule: Daily at 9:00 AM UTC"
+	@echo "  📋 Stale PR threshold: 14 days"
+	@echo "  📋 Stale issue threshold: 30 days"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Commit and push the new files:"
+	@echo "     git add .github .opencode && git commit -m 'Add daily routine workflow'"
+	@echo "  2. Test the workflow manually in GitHub Actions"
+	@echo "  3. The workflow will run automatically daily at 9:00 AM UTC"
+	@echo ""
+	@echo "To customize the schedule, edit .github/workflows/daily-routine.yml"
+
+clean:
+	@echo "🗑️  Removing daily routine files..."
+	@rm -f .github/workflows/daily-routine.yml
+	@rm -f .opencode/commands/stale-check.md
+	@echo "✅ Cleaned up daily routine files"
+	@echo "   Note: opencode-run.yml was preserved as it may be used by other workflows"
+
+# Validation targets
+validate: detect-owner
+	@echo "✅ Validation passed - ready to install"
+
+# Info target for debugging
+info: detect-owner
+	@echo "Configuration Information:"
+	@echo "  SOURCE_REPO: $(SOURCE_REPO)"
+	@echo "  SOURCE_BRANCH: $(SOURCE_BRANCH)"
+	@echo "  REPO_OWNER: $(REPO_OWNER)"
+	@echo "  WORKFLOW_URL: $(WORKFLOW_URL)"
+	@echo "  STALE_CHECK_URL: $(STALE_CHECK_URL)"
