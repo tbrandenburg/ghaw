@@ -1,0 +1,42 @@
+name: Check Run Failure Automation
+
+on:
+  check_run:
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  check-failure-detection:
+    # Only trigger on actual failures, not success
+    if: github.event.check_run.conclusion == 'failure' || github.event.check_run.conclusion == 'cancelled' || github.event.check_run.conclusion == 'timed_out'
+    runs-on: ubuntu-latest
+    outputs:
+      check_name: ${{ steps.extract-info.outputs.check_name }}
+      conclusion: ${{ steps.extract-info.outputs.conclusion }}
+    steps:
+      - name: Extract check information
+        id: extract-info
+        run: |
+          echo "check_name=${{ github.event.check_run.name }}" >> $GITHUB_OUTPUT
+          echo "conclusion=${{ github.event.check_run.conclusion }}" >> $GITHUB_OUTPUT
+          echo "Check '${{ github.event.check_run.name }}' failed with: ${{ github.event.check_run.conclusion }}"
+
+  notify-check-failure:
+    needs: check-failure-detection
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: "check-failure"
+      prompt: |
+        Check Run Failed
+        
+        Check Name: ${{ needs.check-failure-detection.outputs.check_name }}
+        Status: ${{ needs.check-failure-detection.outputs.conclusion }}
+        Repository: ${{ github.repository }}
+        
+        This is a dummy message for check failure automation testing.
+        Please acknowledge receipt of this check failure event.
+      model: "opencode/big-pickle"
+      agent: "build"
+      timeout-minutes: 10

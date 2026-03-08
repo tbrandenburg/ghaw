@@ -1,48 +1,37 @@
 {
-  "MAKEFILE_ELIMINATE_ASK_DUPLICATION": {
+  "ANALYZE_PR_WORKFLOW_ERRORS": {
     "status": "done",
     "evidence": [
-      "edit: Created INTERACTIVE_PREFIX_CHOICE helper function to eliminate 90% of ASK_* duplication",
-      "edit: Refactored ASK_PRIORITY_PREFIX, ASK_SEVERITY_PREFIX, ASK_CONFIDENCE_PREFIX, ASK_COMPLEXITY_PREFIX to use shared logic",
-      "bash: make -f Makefile.ghprj setup-dry-run - confirmed refactored functions work correctly",
-      "Reduced ~280 lines of duplicated code to ~50 lines with shared helper function"
+      "gh run list: Found 10+ consecutive PR workflow failures with 0s duration (parse-time failures)",
+      "Analysis: Failures caused by github.event property access in multi-event triggers", 
+      "5xWhy completed: Root cause = GitHub Actions validates ALL expressions at parse-time",
+      "Comparison: Working workflows use simple triggers and safe context variables only"
     ],
-    "last_verified": "2026-03-07T00:15:00Z"
+    "last_verified": "2026-03-08T07:20:00Z"
   },
-  "MAKEFILE_EXTRACT_COMMON_SETUP": {
-    "status": "done", 
-    "evidence": [
-      "edit: Created COMMON_SETUP_LOGIC function that handles both apply and dry-run modes",
-      "edit: Replaced _setup and _setup_dry_run functions with single-line calls to COMMON_SETUP_LOGIC",
-      "bash: make -f Makefile.ghprj setup-dry-run - confirmed dry-run mode works correctly",
-      "bash: make -f Makefile.ghprj setup - confirmed apply mode works correctly with success message",
-      "Eliminated ~180 lines of duplicated setup logic between _setup and _setup_dry_run functions"
-    ],
-    "last_verified": "2026-03-07T00:30:00Z"
-  },
-  "MAKEFILE_DATA_DRIVEN_PROCESSING": {
+  "PLAN_PR_WORKFLOW_FIX": {
     "status": "done",
     "evidence": [
-      "edit: Created METADATA_LABEL_TYPES registry and configuration constants for data-driven approach",
-      "edit: Created GENERATE_ALL_METADATA_LABELS function to replace duplicated temp file generation",
-      "edit: Created PROCESS_ALL_METADATA_PREFIXES function to replace duplicated label processing logic", 
-      "edit: Updated COMMON_SETUP_LOGIC to use data-driven functions instead of hardcoded patterns",
-      "bash: make -f Makefile.ghprj setup-dry-run - confirmed data-driven processing works correctly",
-      "Consolidated repetitive label processing into reusable functions, making it easier to add new label types"
+      "Current state: PR workflow works for pull_request events, but missing check/workflow failures",
+      "Plan: Create separate workflows for each event type to avoid parse-time conflicts",
+      "Phase 1: Add check-failure and workflow-failure as separate workflow files",
+      "Phase 2: Add safe event context extraction using job steps, not workflow expressions"
     ],
-    "last_verified": "2026-03-07T00:45:00Z"
+    "last_verified": "2026-03-08T07:22:00Z"
   },
-  "MAKEFILE_SEMANTIC_COLORS_STRUCTURE": {
+  "IMPLEMENT_PR_WORKFLOW_FIX": {
     "status": "done",
     "evidence": [
-      "edit: Created semantic color constants (RED, GREEN, YELLOW, etc.) to replace magic hex values",
-      "edit: Added logical color mappings with explanatory comments (red=urgent/complex, green=safe/simple)",
-      "edit: Restructured file with clear section headers and comprehensive documentation",
-      "edit: Improved descriptions with explanatory context (urgency-based, impact-based, etc.)",
-      "bash: wc -l Makefile.ghprj - final optimized file is 487 lines (down from ~494 with better organization)",
-      "bash: make -f Makefile.ghprj setup-dry-run - confirmed semantic colors and structure work correctly",
-      "Enhanced maintainability with semantic color names, better organization, and comprehensive documentation"
+      "Created check-failure-automation.yml: Separate workflow for check_run failures with safe property access",
+      "Created workflow-failure-automation.yml: Separate workflow for workflow_run failures",
+      "Enhanced pr-workflow-automation.yml: Added job-based context extraction for PR details",
+      "Validation: All 5 automation workflows have valid YAML syntax"
     ],
-    "last_verified": "2026-03-07T01:00:00Z"
+    "last_verified": "2026-03-08T07:25:00Z"
+  },
+  "VERIFY_PR_WORKFLOW_CI": {
+    "status": "pending",
+    "evidence": [],
+    "last_verified": "2026-03-08T07:15:00Z"
   }
 }

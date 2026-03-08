@@ -8,11 +8,36 @@ permissions:
   contents: read
 
 jobs:
-  pr-opened:
+  pr-info-extraction:
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.extract-pr.outputs.pr_number }}
+      pr_title: ${{ steps.extract-pr.outputs.pr_title }}
+      pr_author: ${{ steps.extract-pr.outputs.pr_author }}
+    steps:
+      - name: Extract PR information
+        id: extract-pr
+        run: |
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          echo "pr_title=${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+          echo "pr_author=${{ github.event.pull_request.user.login }}" >> $GITHUB_OUTPUT
+          echo "New PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}"
+
+  notify-pr-opened:
+    needs: pr-info-extraction
     uses: ./.github/workflows/opencode-run.yml
     with:
       run-name: "pr-opened"
-      prompt: "New Pull Request Created - This is a dummy message for PR workflow automation testing."
+      prompt: |
+        New Pull Request Created
+        
+        PR Number: #${{ needs.pr-info-extraction.outputs.pr_number }}
+        PR Title: ${{ needs.pr-info-extraction.outputs.pr_title }}
+        PR Author: ${{ needs.pr-info-extraction.outputs.pr_author }}
+        Repository: ${{ github.repository }}
+        
+        This is a dummy message for PR workflow automation testing.
+        Please acknowledge receipt of this new pull request event.
       model: "opencode/big-pickle"
       agent: "build"
       timeout-minutes: 10
