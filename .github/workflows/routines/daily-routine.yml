@@ -2,8 +2,8 @@ name: Daily Routine - Stale Check
 
 on:
   schedule:
-    # Run daily at 11:00 AM UTC (adjust as needed)
-    - cron: '0 11 * * *'
+    # Run daily at 11:00 AM CET (10:00 UTC)
+    - cron: '0 10 * * *'
   workflow_dispatch:
     # Allow manual triggering for testing
 
