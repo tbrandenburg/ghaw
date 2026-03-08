@@ -1,0 +1,13 @@
+name: PR Workflow Test
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push'
+    steps:
+      - name: Test step
+        run: echo "Testing PR workflow"
