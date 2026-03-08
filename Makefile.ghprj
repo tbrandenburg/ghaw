@@ -383,36 +383,26 @@ if echo "$$name" | grep -q "^priority:"; then \
   name="$${name#priority:}"; \
   if [ -n "$$PRIORITY_PREFIX" ]; then \
     name="$$PRIORITY_PREFIX/$$name"; \
-  else \
-    continue; \
   fi; \
 elif echo "$$name" | grep -q "^severity:"; then \
   name="$${name#severity:}"; \
   if [ -n "$$SEVERITY_PREFIX" ]; then \
     name="$$SEVERITY_PREFIX/$$name"; \
-  else \
-    continue; \
   fi; \
 elif echo "$$name" | grep -q "^confidence:"; then \
   name="$${name#confidence:}"; \
   if [ -n "$$CONFIDENCE_PREFIX" ]; then \
     name="$$CONFIDENCE_PREFIX/$$name"; \
-  else \
-    continue; \
   fi; \
 elif echo "$$name" | grep -q "^complexity:"; then \
   name="$${name#complexity:}"; \
   if [ -n "$$COMPLEXITY_PREFIX" ]; then \
     name="$$COMPLEXITY_PREFIX/$$name"; \
-  else \
-    continue; \
   fi; \
 elif echo "$$name" | grep -q "^rank:"; then \
   name="$${name#rank:}"; \
   if [ -n "$$RANK_PREFIX" ]; then \
     name="$$RANK_PREFIX/$$name"; \
-  else \
-    continue; \
   fi; \
 else \
   if [ -n "$$PREFIX" ]; then \
