@@ -1,4 +1,4 @@
-name: Simple OpenCode Review Agent
+name: Examples - Simple OpenCode Review Agent
 
 on:
   workflow_dispatch:

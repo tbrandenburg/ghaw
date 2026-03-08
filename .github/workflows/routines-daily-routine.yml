@@ -1,4 +1,4 @@
-name: Daily Routine - Stale Check
+name: Routines - Daily Routine - Stale Check
 
 on:
   schedule:

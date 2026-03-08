@@ -1,4 +1,4 @@
-name: Enhanced OpenCode Test
+name: Examples - Enhanced OpenCode Test
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Execute OpenCode Commands from Issue Comments
+name: Issues - Execute OpenCode Commands from Issue Comments
 
 on:
   issue_comment:

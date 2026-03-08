@@ -1,4 +1,4 @@
-name: Comprehensive Review Test
+name: Examples - Comprehensive Review Test
 
 on:
   workflow_dispatch:

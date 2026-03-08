@@ -1,4 +1,4 @@
-name: Simple OpenCode Test
+name: Examples - Simple OpenCode Test
 
 on:
   workflow_dispatch:

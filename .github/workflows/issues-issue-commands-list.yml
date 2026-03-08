@@ -1,4 +1,4 @@
-name: List Available Commands and Agents on New Issue
+name: Issues - List Available Commands and Agents on New Issue
 
 on:
   issues:
