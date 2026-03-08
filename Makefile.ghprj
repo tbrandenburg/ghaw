@@ -68,6 +68,16 @@ COMPLEXITY_PREFIX ?= complexity # Implementation effort (complexity/high, comple
 RANK_PREFIX ?= rank             # Issue ordering rank (rank/1, rank/2, ..., rank/10)
 
 # =============================================================================
+# DEBUGGING CONFIGURATION
+# =============================================================================
+
+# Verbose mode - show detailed debug information including API responses
+VERBOSE ?= false
+
+# Debug mode - show all API parameters before making calls
+DEBUG ?= false
+
+# =============================================================================
 # DATA-DRIVEN LABEL TYPE REGISTRY
 # =============================================================================
 
@@ -530,14 +540,33 @@ while IFS='|' read -r name color desc; do \
     fi; \
   else \
     encoded="$$(python3 -c 'import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1], safe=""))' "$$name")"; \
+    if [ "$(DEBUG)" = "true" ]; then \
+      echo "DEBUG: Processing label '$$name' with color='$$color' description='$$desc'"; \
+    fi; \
     if gh api "repos/$(REPO)/labels/$$encoded" >/dev/null 2>&1; then \
       echo "UPDATE  $$name"; \
-      gh api -X PATCH "repos/$(REPO)/labels/$$encoded" \
-        -f new_name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
+      if [ "$(VERBOSE)" = "true" ]; then \
+        echo "VERBOSE: PATCH to repos/$(REPO)/labels/$$encoded with name='$$name' color='$$color'"; \
+      fi; \
+      if ! response=$$(gh api -X PATCH "repos/$(REPO)/labels/$$encoded" \
+        -f new_name="$$name" -f color="$$color" -f description="$$desc" 2>&1); then \
+        echo "ERROR: Failed to update label '$$name' (HTTP $$?)"; \
+        echo "Response: $$response"; \
+        echo "Parameters: name='$$name' color='$$color' description='$$desc'"; \
+        exit 1; \
+      fi; \
     else \
       echo "CREATE  $$name"; \
-      gh api -X POST "repos/$(REPO)/labels" \
-        -f name="$$name" -f color="$$color" -f description="$$desc" >/dev/null; \
+      if [ "$(VERBOSE)" = "true" ]; then \
+        echo "VERBOSE: POST to repos/$(REPO)/labels with name='$$name' color='$$color'"; \
+      fi; \
+      if ! response=$$(gh api -X POST "repos/$(REPO)/labels" \
+        -f name="$$name" -f color="$$color" -f description="$$desc" 2>&1); then \
+        echo "ERROR: Failed to create label '$$name' (HTTP $$?)"; \
+        echo "Response: $$response"; \
+        echo "Parameters: name='$$name' color='$$color' description='$$desc'"; \
+        exit 1; \
+      fi; \
     fi; \
   fi; \
 done < /tmp/workflow_specs.txt; \
