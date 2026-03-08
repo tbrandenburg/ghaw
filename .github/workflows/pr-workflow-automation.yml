@@ -38,7 +38,7 @@ jobs:
             EVENT_DESCRIPTION="pr-opened"
           elif [ "$EVENT_TYPE" = "check_run" ] && [ "$ACTION" = "completed" ]; then
             echo "Check run completed"
-            CHECK_STATUS="${{ github.event.check_run.conclusion }}"
+            CHECK_STATUS=$(echo '${{ toJSON(github.event) }}' | jq -r '.check_run.conclusion // ""')
             if [ "$CHECK_STATUS" = "failure" ] || [ "$CHECK_STATUS" = "cancelled" ] || [ "$CHECK_STATUS" = "timed_out" ]; then
               echo "Check failed with status: $CHECK_STATUS"
               SHOULD_RUN_OPENCODE="true"
@@ -46,7 +46,7 @@ jobs:
             fi
           elif [ "$EVENT_TYPE" = "workflow_run" ] && [ "$ACTION" = "completed" ]; then
             echo "Workflow run completed"
-            WORKFLOW_STATUS="${{ github.event.workflow_run.conclusion }}"
+            WORKFLOW_STATUS=$(echo '${{ toJSON(github.event) }}' | jq -r '.workflow_run.conclusion // ""')
             if [ "$WORKFLOW_STATUS" = "failure" ] || [ "$WORKFLOW_STATUS" = "cancelled" ] || [ "$WORKFLOW_STATUS" = "timed_out" ]; then
               echo "Workflow failed with status: $WORKFLOW_STATUS"
               SHOULD_RUN_OPENCODE="true"
@@ -65,24 +65,23 @@ jobs:
           PR_TITLE=""
           PR_AUTHOR=""
           
+          # Use GitHub API to safely get event information
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            PR_NUMBER="${{ github.event.pull_request.number }}"
-            PR_TITLE="${{ github.event.pull_request.title }}"
-            PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+            PR_NUMBER=$(echo '${{ toJSON(github.event.pull_request) }}' | jq -r '.number // ""')
+            PR_TITLE=$(echo '${{ toJSON(github.event.pull_request) }}' | jq -r '.title // ""')
+            PR_AUTHOR=$(echo '${{ toJSON(github.event.pull_request) }}' | jq -r '.user.login // ""')
           elif [ "${{ github.event_name }}" = "check_run" ]; then
-            # Try to get PR info from check run
-            if [ -n "${{ github.event.check_run.pull_requests[0].number }}" ]; then
-              PR_NUMBER="${{ github.event.check_run.pull_requests[0].number }}"
-              PR_TITLE="${{ github.event.check_run.pull_requests[0].title }}"
-              PR_AUTHOR="${{ github.event.check_run.pull_requests[0].user.login }}"
-            fi
+            # Extract PR info from check run event if available
+            PR_DATA=$(echo '${{ toJSON(github.event.check_run.pull_requests) }}' | jq -r '.[0] // {}')
+            PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number // ""')
+            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // ""')
+            PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.user.login // ""')
           elif [ "${{ github.event_name }}" = "workflow_run" ]; then
-            # Try to get PR info from workflow run
-            if [ -n "${{ github.event.workflow_run.pull_requests[0].number }}" ]; then
-              PR_NUMBER="${{ github.event.workflow_run.pull_requests[0].number }}"
-              PR_TITLE="${{ github.event.workflow_run.pull_requests[0].title }}"
-              PR_AUTHOR="${{ github.event.workflow_run.pull_requests[0].user.login }}"
-            fi
+            # Extract PR info from workflow run event if available
+            PR_DATA=$(echo '${{ toJSON(github.event.workflow_run.pull_requests) }}' | jq -r '.[0] // {}')
+            PR_NUMBER=$(echo "$PR_DATA" | jq -r '.number // ""')
+            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // ""')
+            PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.user.login // ""')
           fi
           
           echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
