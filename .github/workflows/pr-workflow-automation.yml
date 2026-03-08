@@ -3,13 +3,41 @@ name: Pull Request Workflow Automation
 on:
   pull_request:
     types: [opened]
+  check_run:
+    types: [completed]  
+  workflow_run:
+    types: [completed]
+
+permissions:
+  contents: read
 
 jobs:
   pr-opened:
+    if: github.event_name == 'pull_request'
     uses: ./.github/workflows/opencode-run.yml
     with:
       run-name: "pr-opened"
-      prompt: "New Pull Request Created - This is a test message."
+      prompt: "New Pull Request Created - This is a dummy message for PR workflow automation testing."
       model: "opencode/big-pickle"
       agent: "build"
+      timeout-minutes: 10
+
+  check-completed:
+    if: github.event_name == 'check_run'
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: "check-completed"
+      prompt: "Check Run Completed - This is a dummy message for check automation testing."
+      model: "opencode/big-pickle"
+      agent: "build"
+      timeout-minutes: 10
+
+  workflow-completed:
+    if: github.event_name == 'workflow_run'
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: "workflow-completed"
+      prompt: "Workflow Run Completed - This is a dummy message for workflow automation testing."
+      model: "opencode/big-pickle"
+      agent: "build"  
       timeout-minutes: 10
