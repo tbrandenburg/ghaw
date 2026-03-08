@@ -12,6 +12,7 @@
 #   • Severity: critical, high, medium, low (impact-based)
 #   • Confidence: high, medium, low (certainty-based)
 #   • Complexity: high, medium, low (effort-based)
+#   • Rank: 1-10 (ordering-based for issue prioritization)
 #
 # KEY CONCEPTS:
 #   • "closed" = PR merged to main (code complete)
@@ -38,7 +39,7 @@
 #     make -f Makefile.ghprj setup PRIORITY_PREFIX=p CONFIDENCE_PREFIX=conf
 #
 #   Disable specific label types:
-#     make -f Makefile.ghprj setup CONFIDENCE_PREFIX="" COMPLEXITY_PREFIX=""
+#     make -f Makefile.ghprj setup CONFIDENCE_PREFIX="" COMPLEXITY_PREFIX="" RANK_PREFIX=""
 #
 # =============================================================================
 
@@ -64,25 +65,28 @@ PRIORITY_PREFIX ?= priority     # Priority urgency (priority/high, priority/medi
 SEVERITY_PREFIX ?= severity     # Impact severity (severity/critical, severity/high, etc.)
 CONFIDENCE_PREFIX ?= confidence # Certainty level (confidence/high, confidence/medium, confidence/low)  
 COMPLEXITY_PREFIX ?= complexity # Implementation effort (complexity/high, complexity/medium, complexity/low)
+RANK_PREFIX ?= rank             # Issue ordering rank (rank/1, rank/2, ..., rank/10)
 
 # =============================================================================
 # DATA-DRIVEN LABEL TYPE REGISTRY
 # =============================================================================
 
 # Metadata label types supported by this system
-METADATA_LABEL_TYPES := priority severity confidence complexity
+METADATA_LABEL_TYPES := priority severity confidence complexity rank
 
 # Label levels for each type (defines the available options)
 PRIORITY_LEVELS := high medium low
 SEVERITY_LEVELS := critical high medium low  
 CONFIDENCE_LEVELS := high medium low
 COMPLEXITY_LEVELS := high medium low
+RANK_LEVELS := 1 2 3 4 5 6 7 8 9 10
 
 # Short prefix alternatives for interactive mode
 PRIORITY_SHORT := p
 SEVERITY_SHORT := sev
 CONFIDENCE_SHORT := conf
 COMPLEXITY_SHORT := comp
+RANK_SHORT := r
 
 # -------------------------
 # Colors (hex without '#')
@@ -149,6 +153,18 @@ COLOR_COMPLEXITY_HIGH   ?= $(RED)
 COLOR_COMPLEXITY_MEDIUM ?= $(YELLOW)
 COLOR_COMPLEXITY_LOW    ?= $(GREEN)
 
+# Rank colors: Dark Blue (high priority rank) → Light Blue (low priority rank)
+COLOR_RANK_1   ?= $(DARK_BLUE)
+COLOR_RANK_2   ?= $(BLUE)
+COLOR_RANK_3   ?= $(BLUE)
+COLOR_RANK_4   ?= $(LIGHT_BLUE)
+COLOR_RANK_5   ?= $(LIGHT_BLUE)
+COLOR_RANK_6   ?= C8E6C9
+COLOR_RANK_7   ?= E8F5E8
+COLOR_RANK_8   ?= F1F8E9
+COLOR_RANK_9   ?= F9FBE7
+COLOR_RANK_10  ?= FAFAFA
+
 # =============================================================================
 # LABEL DESCRIPTIONS
 # =============================================================================
@@ -181,6 +197,18 @@ DESC_CONFIDENCE_LOW    ?= Low confidence - high uncertainty, significant unknown
 DESC_COMPLEXITY_HIGH   ?= High complexity - intricate solution, multiple dependencies
 DESC_COMPLEXITY_MEDIUM ?= Medium complexity - moderate effort and dependencies
 DESC_COMPLEXITY_LOW    ?= Low complexity - straightforward implementation
+
+# Rank descriptions (ordering-based - used to prioritize issues within categories)
+DESC_RANK_1   ?= Rank 1 - Highest priority for immediate attention
+DESC_RANK_2   ?= Rank 2 - Very high priority
+DESC_RANK_3   ?= Rank 3 - High priority
+DESC_RANK_4   ?= Rank 4 - Above normal priority
+DESC_RANK_5   ?= Rank 5 - Normal priority
+DESC_RANK_6   ?= Rank 6 - Below normal priority
+DESC_RANK_7   ?= Rank 7 - Low priority
+DESC_RANK_8   ?= Rank 8 - Very low priority
+DESC_RANK_9   ?= Rank 9 - Minimal priority
+DESC_RANK_10  ?= Rank 10 - Lowest priority for future consideration
 
 # =============================================================================
 # VALIDATION AND GUARD FUNCTIONS
@@ -294,6 +322,20 @@ else \
 fi
 endef
 
+define ASK_RANK_PREFIX
+if [ "$(INTERACTIVE)" = "true" ]; then \
+  echo "Choose rank label prefix:"; \
+  echo "  1) rank/ (default) - Labels: rank/1, rank/2, ..., rank/10"; \
+  echo "  2) r/ - Labels: r/1, r/2, ..., r/10"; \
+  echo "  3) No rank labels"; \
+  echo "  4) Custom prefix"; \
+  $(call INTERACTIVE_PREFIX_CHOICE,rank,r,rank); \
+  RANK_PREFIX="$$PREFIX_VAR"; \
+else \
+  RANK_PREFIX="$(RANK_PREFIX)"; \
+fi
+endef
+
 # -------------------------
 # Data-Driven Label Processing Functions  
 # -------------------------
@@ -320,6 +362,18 @@ if [ -n "$$COMPLEXITY_PREFIX" ]; then \
   echo "complexity:high|$(COLOR_COMPLEXITY_HIGH)|$(DESC_COMPLEXITY_HIGH)" >> /tmp/workflow_specs.txt; \
   echo "complexity:medium|$(COLOR_COMPLEXITY_MEDIUM)|$(DESC_COMPLEXITY_MEDIUM)" >> /tmp/workflow_specs.txt; \
   echo "complexity:low|$(COLOR_COMPLEXITY_LOW)|$(DESC_COMPLEXITY_LOW)" >> /tmp/workflow_specs.txt; \
+fi; \
+if [ -n "$$RANK_PREFIX" ]; then \
+  echo "rank:1|$(COLOR_RANK_1)|$(DESC_RANK_1)" >> /tmp/workflow_specs.txt; \
+  echo "rank:2|$(COLOR_RANK_2)|$(DESC_RANK_2)" >> /tmp/workflow_specs.txt; \
+  echo "rank:3|$(COLOR_RANK_3)|$(DESC_RANK_3)" >> /tmp/workflow_specs.txt; \
+  echo "rank:4|$(COLOR_RANK_4)|$(DESC_RANK_4)" >> /tmp/workflow_specs.txt; \
+  echo "rank:5|$(COLOR_RANK_5)|$(DESC_RANK_5)" >> /tmp/workflow_specs.txt; \
+  echo "rank:6|$(COLOR_RANK_6)|$(DESC_RANK_6)" >> /tmp/workflow_specs.txt; \
+  echo "rank:7|$(COLOR_RANK_7)|$(DESC_RANK_7)" >> /tmp/workflow_specs.txt; \
+  echo "rank:8|$(COLOR_RANK_8)|$(DESC_RANK_8)" >> /tmp/workflow_specs.txt; \
+  echo "rank:9|$(COLOR_RANK_9)|$(DESC_RANK_9)" >> /tmp/workflow_specs.txt; \
+  echo "rank:10|$(COLOR_RANK_10)|$(DESC_RANK_10)" >> /tmp/workflow_specs.txt; \
 fi
 endef
 
@@ -353,6 +407,13 @@ elif echo "$$name" | grep -q "^complexity:"; then \
   else \
     continue; \
   fi; \
+elif echo "$$name" | grep -q "^rank:"; then \
+  name="$${name#rank:}"; \
+  if [ -n "$$RANK_PREFIX" ]; then \
+    name="$$RANK_PREFIX/$$name"; \
+  else \
+    continue; \
+  fi; \
 else \
   if [ -n "$$PREFIX" ]; then \
     name="$$PREFIX/$$name"; \
@@ -365,6 +426,7 @@ priority_name = $(strip $(PRIORITY_PREFIX))$(if $(strip $(PRIORITY_PREFIX)),/,)$
 severity_name = $(strip $(SEVERITY_PREFIX))$(if $(strip $(SEVERITY_PREFIX)),/,)$(1)
 confidence_name = $(strip $(CONFIDENCE_PREFIX))$(if $(strip $(CONFIDENCE_PREFIX)),/,)$(1)
 complexity_name = $(strip $(COMPLEXITY_PREFIX))$(if $(strip $(COMPLEXITY_PREFIX)),/,)$(1)
+rank_name = $(strip $(RANK_PREFIX))$(if $(strip $(RANK_PREFIX)),/,)$(1)
 
 WORKFLOW_SPECS = \
   $(call workflow_name,open)|$(COLOR_OPEN)|$(DESC_OPEN) \
@@ -394,6 +456,18 @@ COMPLEXITY_SPECS = \
   $(call complexity_name,high)|$(COLOR_COMPLEXITY_HIGH)|$(DESC_COMPLEXITY_HIGH) \
   $(call complexity_name,medium)|$(COLOR_COMPLEXITY_MEDIUM)|$(DESC_COMPLEXITY_MEDIUM) \
   $(call complexity_name,low)|$(COLOR_COMPLEXITY_LOW)|$(DESC_COMPLEXITY_LOW)
+
+RANK_SPECS = \
+  $(call rank_name,1)|$(COLOR_RANK_1)|$(DESC_RANK_1) \
+  $(call rank_name,2)|$(COLOR_RANK_2)|$(DESC_RANK_2) \
+  $(call rank_name,3)|$(COLOR_RANK_3)|$(DESC_RANK_3) \
+  $(call rank_name,4)|$(COLOR_RANK_4)|$(DESC_RANK_4) \
+  $(call rank_name,5)|$(COLOR_RANK_5)|$(DESC_RANK_5) \
+  $(call rank_name,6)|$(COLOR_RANK_6)|$(DESC_RANK_6) \
+  $(call rank_name,7)|$(COLOR_RANK_7)|$(DESC_RANK_7) \
+  $(call rank_name,8)|$(COLOR_RANK_8)|$(DESC_RANK_8) \
+  $(call rank_name,9)|$(COLOR_RANK_9)|$(DESC_RANK_9) \
+  $(call rank_name,10)|$(COLOR_RANK_10)|$(DESC_RANK_10)
 
 .PHONY: setup setup-dry-run setup-list _setup _setup_dry_run
 
@@ -427,6 +501,7 @@ define COMMON_SETUP_LOGIC
 @$(ASK_SEVERITY_PREFIX)
 @$(ASK_CONFIDENCE_PREFIX)
 @$(ASK_COMPLEXITY_PREFIX)
+@$(ASK_RANK_PREFIX)
 @if [ "$(1)" = "dry-run" ]; then \
   echo "Dry-run workflow setup for repo: $(REPO)"; \
 else \
@@ -437,6 +512,7 @@ fi
 @if [ -n "$$SEVERITY_PREFIX" ]; then echo "Using severity prefix: $$SEVERITY_PREFIX/"; else echo "No severity labels"; fi
 @if [ -n "$$CONFIDENCE_PREFIX" ]; then echo "Using confidence prefix: $$CONFIDENCE_PREFIX/"; else echo "No confidence labels"; fi
 @if [ -n "$$COMPLEXITY_PREFIX" ]; then echo "Using complexity prefix: $$COMPLEXITY_PREFIX/"; else echo "No complexity labels"; fi
+@if [ -n "$$RANK_PREFIX" ]; then echo "Using rank prefix: $$RANK_PREFIX/"; else echo "No rank labels"; fi
 @if [ "$(1)" = "dry-run" ]; then \
   existing="$$(gh api "repos/$(REPO)/labels?per_page=100" --paginate | jq -r '.[] | [.name,.color,(.description // "")] | @tsv')"; \
 fi; \
@@ -477,7 +553,7 @@ while IFS='|' read -r name color desc; do \
 done < /tmp/workflow_specs.txt; \
 rm -f /tmp/workflow_specs.txt
 @if [ "$(1)" = "apply" ]; then \
-  echo "Workflow, priority, severity, confidence, and complexity setup complete."; \
+  echo "Workflow, priority, severity, confidence, complexity, and rank setup complete."; \
 fi
 endef
 
