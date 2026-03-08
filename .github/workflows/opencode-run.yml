@@ -1,4 +1,4 @@
-name: OpenCode Run (Reusable)
+name: Core - Reusable OpenCode Run
 
 on:
   workflow_call:
