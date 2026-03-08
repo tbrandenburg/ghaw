@@ -6,6 +6,8 @@ You are tasked with checking for stale pull requests and issues in this reposito
 
 1. **Get repo owner github user name**
    - Use gh CLI to get the repo owner github user name: `gh repo view --json owner --jq '.owner.login'`
+   - Alternative if gh CLI fails: Extract from `GITHUB_REPOSITORY` env var: `echo "$GITHUB_REPOSITORY" | cut -d'/' -f1`
+   - Or use GitHub API directly: `curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY" | jq -r '.owner.login'`
 
 2. **Check for stale pull requests:**
    - Find PRs that have been open for more than 14 days without any activity (no comments, commits, or updates)

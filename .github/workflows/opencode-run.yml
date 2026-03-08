@@ -62,6 +62,8 @@ jobs:
       results: ${{ steps.process-results.outputs.results }}
       results-truncated: ${{ steps.process-results.outputs.results-truncated }}
       artifact-name: ${{ steps.process-results.outputs.artifact-name }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     steps:
       - name: Checkout
