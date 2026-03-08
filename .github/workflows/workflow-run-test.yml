@@ -1,0 +1,12 @@
+name: Workflow Run Test
+
+on:
+  workflow_run:
+    types: [completed]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test step
+        run: echo "Workflow run event detected"
