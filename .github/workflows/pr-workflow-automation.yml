@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   pr-opened:
-    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    if: github.event_name == 'pull_request'
     uses: ./.github/workflows/opencode-run.yml
     with:
       run-name: "pr-opened"
@@ -23,10 +23,8 @@ jobs:
         New Pull Request Created
         
         Event: pull_request opened
-        PR Number: #${{ github.event.pull_request.number }}
-        PR Title: "${{ github.event.pull_request.title }}"
-        PR Author: ${{ github.event.pull_request.user.login }}
         Repository: ${{ github.repository }}
+        Actor: ${{ github.actor }}
         
         This is a dummy message for PR workflow automation testing.
         Please acknowledge receipt of this new pull request event.
@@ -34,40 +32,38 @@ jobs:
       agent: "build"
       timeout-minutes: 10
 
-  check-failed:
-    if: github.event_name == 'check_run' && github.event.action == 'completed' && (github.event.check_run.conclusion == 'failure' || github.event.check_run.conclusion == 'cancelled' || github.event.check_run.conclusion == 'timed_out')
+  check-completed:
+    if: github.event_name == 'check_run'
     uses: ./.github/workflows/opencode-run.yml
     with:
-      run-name: "check-failed"
+      run-name: "check-completed"
       prompt: |
-        Check Run Failed
+        Check Run Completed
         
-        Event: check_run completed with failure
-        Check Name: ${{ github.event.check_run.name }}
-        Check Status: ${{ github.event.check_run.conclusion }}
+        Event: check_run completed
         Repository: ${{ github.repository }}
+        Actor: ${{ github.actor }}
         
-        This is a dummy message for check failure automation testing.
-        Please acknowledge receipt of this check failure event.
+        This is a dummy message for check run automation testing.
+        Please acknowledge receipt of this check run event.
       model: "opencode/big-pickle"
       agent: "build"
       timeout-minutes: 10
 
-  workflow-failed:
-    if: github.event_name == 'workflow_run' && github.event.action == 'completed' && (github.event.workflow_run.conclusion == 'failure' || github.event.workflow_run.conclusion == 'cancelled' || github.event.workflow_run.conclusion == 'timed_out')
+  workflow-completed:
+    if: github.event_name == 'workflow_run'
     uses: ./.github/workflows/opencode-run.yml
     with:
-      run-name: "workflow-failed"
+      run-name: "workflow-completed"
       prompt: |
-        Workflow Run Failed
+        Workflow Run Completed
         
-        Event: workflow_run completed with failure
-        Workflow Name: ${{ github.event.workflow_run.name }}
-        Workflow Status: ${{ github.event.workflow_run.conclusion }}
+        Event: workflow_run completed
         Repository: ${{ github.repository }}
+        Actor: ${{ github.actor }}
         
-        This is a dummy message for workflow failure automation testing.
-        Please acknowledge receipt of this workflow failure event.
+        This is a dummy message for workflow run automation testing.
+        Please acknowledge receipt of this workflow run event.
       model: "opencode/big-pickle"
       agent: "build"
       timeout-minutes: 10
