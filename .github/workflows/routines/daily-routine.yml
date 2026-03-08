@@ -13,9 +13,8 @@ jobs:
     with:
       run-name: stale-check
       prompt-file: .opencode/commands/stale-check.md
-      timeout-minutes: 10
+      timeout-minutes: 30
       model: "opencode/big-pickle"
-      agent: "general"
     permissions:
       # Required permissions for the job to access and modify issues/PRs
       issues: write
