@@ -2,11 +2,6 @@
 
 **GitHub Actions Workflow** - A comprehensive toolkit for GitHub repository automation, workflow management, and AI-powered code reviews.
 
-🚀 **Quick Install GHAR (GitHub Auto-Routine)** - Add automated stale PR/issue checking to any repository:
-```bash
-curl -fsSL https://raw.githubusercontent.com/tbrandenburg/ghaw/main/Makefile.ghar | make -f - install
-```
-
 ## 📋 Table of Contents
 
 - [Overview](#overview)
