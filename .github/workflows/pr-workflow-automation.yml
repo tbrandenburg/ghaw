@@ -16,8 +16,8 @@ permissions:
 jobs:
   handle-pr-events:
     runs-on: ubuntu-latest
-    # Only run for the events we're designed to handle
-    if: github.event_name == 'pull_request' || github.event_name == 'check_run' || github.event_name == 'workflow_run'
+    # Skip workflow for push events - only handle PR-related events
+    if: github.event_name != 'push'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
