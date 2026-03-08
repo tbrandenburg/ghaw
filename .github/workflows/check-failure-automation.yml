@@ -9,22 +9,34 @@ permissions:
 
 jobs:
   check-failure-detection:
-    # Only trigger on actual failures, not success
-    if: github.event.check_run.conclusion == 'failure' || github.event.check_run.conclusion == 'cancelled' || github.event.check_run.conclusion == 'timed_out'
     runs-on: ubuntu-latest
     outputs:
       check_name: ${{ steps.extract-info.outputs.check_name }}
       conclusion: ${{ steps.extract-info.outputs.conclusion }}
+      is_failure: ${{ steps.check-failure.outputs.is_failure }}
     steps:
+      - name: Check if check run failed
+        id: check-failure
+        run: |
+          CONCLUSION="${{ github.event.check_run.conclusion }}"
+          if [[ "$CONCLUSION" == "failure" || "$CONCLUSION" == "cancelled" || "$CONCLUSION" == "timed_out" ]]; then
+            echo "is_failure=true" >> $GITHUB_OUTPUT
+            echo "Check run failed with: $CONCLUSION"
+          else
+            echo "is_failure=false" >> $GITHUB_OUTPUT
+            echo "Check run succeeded with: $CONCLUSION"
+          fi
+
       - name: Extract check information
+        if: steps.check-failure.outputs.is_failure == 'true'
         id: extract-info
         run: |
           echo "check_name=${{ github.event.check_run.name }}" >> $GITHUB_OUTPUT
           echo "conclusion=${{ github.event.check_run.conclusion }}" >> $GITHUB_OUTPUT
-          echo "Check '${{ github.event.check_run.name }}' failed with: ${{ github.event.check_run.conclusion }}"
 
   notify-check-failure:
     needs: check-failure-detection
+    if: needs.check-failure-detection.outputs.is_failure == 'true'
     uses: ./.github/workflows/opencode-run.yml
     with:
       run-name: "check-failure"
