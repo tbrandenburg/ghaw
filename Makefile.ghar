@@ -53,7 +53,7 @@ setup-dirs: detect-owner
 
 install-workflow: setup-dirs
 	@echo "📥 Downloading daily-routine.yml..."
-	@curl -fsSL "$(WORKFLOW_URL)" -o .github/workflows/routines/daily-routine.yml
+	@curl -fsSL "$(WORKFLOW_URL)" -o .github/workflows/routines-daily-routine.yml
 	@echo "✅ Downloaded daily-routine.yml"
 
 install-opencode-run: setup-dirs
@@ -79,7 +79,7 @@ install: install-opencode-run install-workflow install-stale-check
 	@echo "🎉 Daily routine installation complete!"
 	@echo ""
 	@echo "What was installed:"
-	@echo "  📄 .github/workflows/routines/daily-routine.yml  - Main daily routine workflow"
+	@echo "  📄 .github/workflows/routines-daily-routine.yml  - Main daily routine workflow"
 	@echo "  📄 .github/workflows/opencode-run.yml   - OpenCode runner (if missing)"
 	@echo "  📄 .opencode/commands/stale-check.md    - Stale check command"
 	@echo ""
@@ -99,7 +99,7 @@ install: install-opencode-run install-workflow install-stale-check
 
 clean:
 	@echo "🗑️  Removing daily routine files..."
-	@rm -f .github/workflows/routines/daily-routine.yml
+	@rm -f .github/workflows/routines-daily-routine.yml
 	@rm -f .opencode/commands/stale-check.md
 	@echo "✅ Cleaned up daily routine files"
 	@echo "   Note: opencode-run.yml was preserved as it may be used by other workflows"

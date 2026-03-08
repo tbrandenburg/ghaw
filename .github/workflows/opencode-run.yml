@@ -102,7 +102,7 @@ jobs:
             echo "OpenCode installation completed"
             
             # Verify installation with better error reporting
-            if ! env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode --version; then
+            if ! env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" GH_TOKEN="$GH_TOKEN" opencode --version; then
               echo "ERROR: OpenCode installation verification failed"
               echo "Checking installation directory:"
               ls -la "$HOME/.opencode/bin/" || echo "Installation directory not found"
@@ -114,18 +114,18 @@ jobs:
         run: |
           if [ -n "${{ inputs.command }}" ]; then
             if [ -n "${{ inputs.prompt }}" ]; then
-              echo "${{ inputs.prompt }}" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+              echo "${{ inputs.prompt }}" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" GH_TOKEN="$GH_TOKEN" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
             elif [ -n "${{ inputs.prompt-file }}" ]; then
               PROMPT=$(cat ${{ inputs.prompt-file }})
-              echo "$PROMPT" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+              echo "$PROMPT" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" GH_TOKEN="$GH_TOKEN" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
             else
-              env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+              env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" GH_TOKEN="$GH_TOKEN" opencode run --command "${{ inputs.command }}" --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
             fi
           elif [ -n "${{ inputs.prompt }}" ]; then
-            echo "${{ inputs.prompt }}" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+            echo "${{ inputs.prompt }}" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" GH_TOKEN="$GH_TOKEN" opencode run --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
           elif [ -n "${{ inputs.prompt-file }}" ]; then
             PROMPT=$(cat ${{ inputs.prompt-file }})
-            echo "$PROMPT" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" opencode run --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
+            echo "$PROMPT" | env -i PATH="$HOME/.opencode/bin:$PATH" HOME="$HOME" GH_TOKEN="$GH_TOKEN" opencode run --model "${{ inputs.model }}" --agent "${{ inputs.agent }}" > ${{ inputs.run-name }}-results.txt
           else
             echo "Error: At least one of 'command', 'prompt', or 'prompt-file' must be provided" >&2
             exit 1
