@@ -18,21 +18,30 @@ jobs:
       - name: Check if workflow failed
         id: check-failure
         run: |
-          CONCLUSION="${{ github.event.workflow_run.conclusion }}"
+          # Use toJSON to safely access event data
+          EVENT_DATA='${{ toJSON(github.event) }}'
+          CONCLUSION=$(echo "$EVENT_DATA" | jq -r '.workflow_run.conclusion // "unknown"')
+          
+          echo "Event data available: $(echo "$EVENT_DATA" | jq -r '.workflow_run.name // "none"')"
+          echo "Conclusion: $CONCLUSION"
+          
           if [[ "$CONCLUSION" == "failure" || "$CONCLUSION" == "cancelled" || "$CONCLUSION" == "timed_out" ]]; then
             echo "is_failure=true" >> $GITHUB_OUTPUT
             echo "Workflow failed with: $CONCLUSION"
           else
             echo "is_failure=false" >> $GITHUB_OUTPUT
-            echo "Workflow succeeded with: $CONCLUSION"
+            echo "Workflow succeeded or event not applicable: $CONCLUSION"
           fi
 
       - name: Extract workflow information  
         if: steps.check-failure.outputs.is_failure == 'true'
         id: extract-info
         run: |
-          echo "workflow_name=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
-          echo "conclusion=${{ github.event.workflow_run.conclusion }}" >> $GITHUB_OUTPUT
+          EVENT_DATA='${{ toJSON(github.event) }}'
+          WORKFLOW_NAME=$(echo "$EVENT_DATA" | jq -r '.workflow_run.name // "unknown"')
+          CONCLUSION=$(echo "$EVENT_DATA" | jq -r '.workflow_run.conclusion // "unknown"')
+          echo "workflow_name=$WORKFLOW_NAME" >> $GITHUB_OUTPUT
+          echo "conclusion=$CONCLUSION" >> $GITHUB_OUTPUT
 
   notify-workflow-failure:
     needs: workflow-failure-detection

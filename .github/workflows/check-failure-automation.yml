@@ -18,21 +18,30 @@ jobs:
       - name: Check if check run failed
         id: check-failure
         run: |
-          CONCLUSION="${{ github.event.check_run.conclusion }}"
+          # Use toJSON to safely access event data
+          EVENT_DATA='${{ toJSON(github.event) }}'
+          CONCLUSION=$(echo "$EVENT_DATA" | jq -r '.check_run.conclusion // "unknown"')
+          
+          echo "Event data available: $(echo "$EVENT_DATA" | jq -r '.check_run.name // "none"')"
+          echo "Conclusion: $CONCLUSION"
+          
           if [[ "$CONCLUSION" == "failure" || "$CONCLUSION" == "cancelled" || "$CONCLUSION" == "timed_out" ]]; then
             echo "is_failure=true" >> $GITHUB_OUTPUT
             echo "Check run failed with: $CONCLUSION"
           else
             echo "is_failure=false" >> $GITHUB_OUTPUT
-            echo "Check run succeeded with: $CONCLUSION"
+            echo "Check run succeeded or event not applicable: $CONCLUSION"
           fi
 
       - name: Extract check information
         if: steps.check-failure.outputs.is_failure == 'true'
         id: extract-info
         run: |
-          echo "check_name=${{ github.event.check_run.name }}" >> $GITHUB_OUTPUT
-          echo "conclusion=${{ github.event.check_run.conclusion }}" >> $GITHUB_OUTPUT
+          EVENT_DATA='${{ toJSON(github.event) }}'
+          CHECK_NAME=$(echo "$EVENT_DATA" | jq -r '.check_run.name // "unknown"')
+          CONCLUSION=$(echo "$EVENT_DATA" | jq -r '.check_run.conclusion // "unknown"')
+          echo "check_name=$CHECK_NAME" >> $GITHUB_OUTPUT
+          echo "conclusion=$CONCLUSION" >> $GITHUB_OUTPUT
 
   notify-check-failure:
     needs: check-failure-detection
