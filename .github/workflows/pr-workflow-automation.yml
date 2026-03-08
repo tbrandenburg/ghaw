@@ -14,10 +14,16 @@ permissions:
   checks: read
 
 jobs:
-  handle-pr-events:
+  determine-action:
     runs-on: ubuntu-latest
     # Skip workflow for push events - only handle PR-related events
     if: github.event_name != 'push'
+    outputs:
+      should_run_opencode: ${{ steps.determine-event.outputs.should_run_opencode }}
+      event_description: ${{ steps.determine-event.outputs.event_description }}
+      pr_number: ${{ steps.get-pr-info.outputs.pr_number }}
+      pr_title: ${{ steps.get-pr-info.outputs.pr_title }}
+      pr_author: ${{ steps.get-pr-info.outputs.pr_author }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -88,25 +94,26 @@ jobs:
           echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT  
           echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
 
-      - name: Call OpenCode Run
-        if: steps.determine-event.outputs.should_run_opencode == 'true'
-        uses: ./.github/workflows/opencode-run.yml
-        with:
-          run-name: "pr-workflow-${{ steps.determine-event.outputs.event_description }}"
-          prompt: |
-            Pull Request Workflow Event Analysis
-            
-            Event Type: ${{ github.event_name }}
-            Action: ${{ github.event.action }}
-            Event Description: ${{ steps.determine-event.outputs.event_description }}
-            PR Number: #${{ steps.get-pr-info.outputs.pr_number }}
-            PR Title: "${{ steps.get-pr-info.outputs.pr_title }}"
-            PR Author: ${{ steps.get-pr-info.outputs.pr_author }}
-            Actor: ${{ github.actor }}
-            Repository: ${{ github.repository }}
-            
-            This is a dummy message for PR workflow automation testing.
-            Please acknowledge receipt of this pull request workflow event.
-          model: "opencode/big-pickle"
-          agent: "build"
-          timeout-minutes: 10
+  call-opencode:
+    needs: determine-action
+    if: needs.determine-action.outputs.should_run_opencode == 'true'
+    uses: ./.github/workflows/opencode-run.yml
+    with:
+      run-name: "pr-workflow-${{ needs.determine-action.outputs.event_description }}"
+      prompt: |
+        Pull Request Workflow Event Analysis
+        
+        Event Type: ${{ github.event_name }}
+        Action: ${{ github.event.action }}
+        Event Description: ${{ needs.determine-action.outputs.event_description }}
+        PR Number: #${{ needs.determine-action.outputs.pr_number }}
+        PR Title: "${{ needs.determine-action.outputs.pr_title }}"
+        PR Author: ${{ needs.determine-action.outputs.pr_author }}
+        Actor: ${{ github.actor }}
+        Repository: ${{ github.repository }}
+        
+        This is a dummy message for PR workflow automation testing.
+        Please acknowledge receipt of this pull request workflow event.
+      model: "opencode/big-pickle"
+      agent: "build"
+      timeout-minutes: 10
