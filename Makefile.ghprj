@@ -116,7 +116,7 @@ COLOR_RELEASED    ?= 0052CC
 
 # Base semantic colors (hex without '#')
 RED       := D73A49
-ORANGE    := FB8500  
+ORANGE    := FB8500
 YELLOW    := FBCA04
 GREEN     := 0E8A16
 BLUE      := 1D76DB
@@ -144,7 +144,7 @@ COLOR_RELEASED    ?= $(DARK_BLUE)   # Dark blue - released to production
 
 # Priority colors: Red (high urgency) → Orange → Green (low urgency)
 COLOR_PRIORITY_HIGH   ?= $(RED)
-COLOR_PRIORITY_MEDIUM ?= $(ORANGE)  
+COLOR_PRIORITY_MEDIUM ?= $(ORANGE)
 COLOR_PRIORITY_LOW    ?= $(DARK_GREEN)
 
 # Severity colors: Dark Red (critical) → Red → Yellow → Green (low impact)
