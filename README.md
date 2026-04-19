@@ -5,6 +5,7 @@
 ## 📋 Table of Contents
 
 - [Overview](#overview)
+- [📚 Documentation](#documentation)
 - [🔧 Makefiles](#makefiles)
 - [🚀 Quick Start](#quick-start)
 - [📄 Available Workflows](#available-workflows)
@@ -22,6 +23,25 @@ GHAW provides multiple specialized Makefiles for different GitHub repository man
 - **🤖 Auto-Routine** (`Makefile.ghar`) - Install automated stale PR/issue management
 - **🏷️ Project Labels** (`Makefile.ghprj`) - Setup OSLC-aligned workflow labels  
 - **👥 Team Generation** (`Makefile.team`) - Generate OpenCode agents from team XML
+
+## 📚 Documentation
+
+### [Issue Workflow States & Scrum Integration](docs/workflow-states.md)
+Comprehensive guide to issue state management, ownership responsibilities, and Scrum ceremony integration.
+
+**Key Topics:**
+- Issue state ownership and transition triggers
+- Integration with Scrum ceremonies (Sprint Planning, Daily Scrum, etc.)
+- Definition of Ready and Definition of Done criteria
+- Workflow automation and best practices
+
+**Quick Reference:**
+```
+open → ready → in-progress → reviewed → closed
+```
+
+### [Documentation Index](docs/README.md)
+Complete documentation directory with setup guides and references.
 
 ## 🔧 Makefiles
 
